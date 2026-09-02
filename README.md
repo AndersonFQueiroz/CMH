@@ -18,7 +18,8 @@
 | ------------- | ------------------ | ------ |
 | Anderson Ferreira Queiroz | Desenvolvedor Full-Stack / Líder | [@AndersonFQueiroz](https://github.com/AndersonFQueiroz) |
 | Igor Marcoli | Desenvolvedor Mobile / Backend | [@IgorMarcoli](https://github.com/IgorMarcoli) |
-| [Nome do Integrante 3] | Desenvolvedor Mobile / Documentação | [@usuario3]() |
+| Pedro | Desenvolvedor Mobile / Frontend | [@Pedro]() |
+| João | Desenvolvedor Mobile / Documentação | [@Joao]() |
 
 > 📌 *Este arquivo e a documentação na raiz atendem à exigência de encaminhamento descrevendo o tema do trabalho e os nomes dos membros da equipe.*
 
