@@ -1,0 +1,91 @@
+# ==========================================
+# CMH Project - .gitignore
+# Backend (Laravel) + Mobile (Expo TypeScript)
+# ==========================================
+
+# ------------------------------------------
+# Laravel / PHP
+# ------------------------------------------
+backend/vendor/
+backend/node_modules/
+backend/public/storage
+backend/public/hot
+backend/storage/*.key
+backend/storage/app/public/usuarios/*
+!backend/storage/app/public/usuarios/.gitkeep
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitkeep
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+backend/storage/framework/testing/*
+!backend/storage/framework/testing/.gitkeep
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/.phpunit.result.cache
+backend/Homestead.json
+backend/Homestead.yaml
+backend/npm-debug.log
+backend/yarn-error.log
+backend/auth.json
+
+# ------------------------------------------
+# Expo / React Native / TypeScript
+# ------------------------------------------
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/.metro/
+mobile/npm-debug.log*
+mobile/yarn-debug.log*
+mobile/yarn-error.log*
+mobile/.pnpm-debug.log*
+
+# Native build artifacts (se rodar prebuild)
+mobile/android/
+mobile/ios/
+*.orig.*
+
+# TypeScript cache
+mobile/*.tsbuildinfo
+
+# ------------------------------------------
+# Environment Variables
+# ------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ------------------------------------------
+# Logs and Databases
+# ------------------------------------------
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# ------------------------------------------
+# OS & IDEs
+# ------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
