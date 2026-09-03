@@ -18,8 +18,8 @@
 | ------------- | ------------------ | ------ |
 | Anderson Ferreira Queiroz | Desenvolvedor Full-Stack | [@AndersonFQueiroz](https://github.com/AndersonFQueiroz) |
 | Igor Marcoli | Desenvolvedor Full-Stack | [@IgorMarcoli](https://github.com/IgorMarcoli) |
-| Pedro | Desenvolvedor Full-Stack | [@Pedro]() |
-| João | Desenvolvedor Full-Stack | [@Joao]() |
+| Pedro | Desenvolvedor Full-Stack | [@PedroMuginski](https://github.com/Muginski) |
+| João | Desenvolvedor Full-Stack | [@JoaoMartins ](https://github.com/JoaoPMA23) |
 
 > 📌 *Este arquivo e a documentação na raiz atendem à exigência de encaminhamento descrevendo o tema do trabalho e os nomes dos membros da equipe.*
 
