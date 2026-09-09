@@ -1,4 +1,4 @@
-# Instruções para Agentes de IA — CMH
+# Instruções para Agentes de IA — CMH (Cadastro Móvel Habitacional)
 
 Este documento é destinado a **agentes de IA** (Antigravity, Claude Code, GitHub Copilot, Cursor, etc.) que forem auxiliar no desenvolvimento deste repositório. Leia-o integralmente antes de planejar ou executar qualquer tarefa.
 
@@ -6,7 +6,9 @@ Este documento é destinado a **agentes de IA** (Antigravity, Claude Code, GitHu
 
 ## Contexto do Projeto
 
-O **CMH** é uma aplicação completa composta por uma **API REST em Laravel (PHP)** e um **aplicativo móvel em Expo (React Native + TypeScript)**. O projeto foi estruturado para a disciplina de **Programação para Dispositivos Móveis (PDM 2026.2)** — *TP Entrega 1*, focando prioritariamente no desenvolvimento e documentação do **CRUD completo de Usuários com suporte a múltiplos tipos de dados (números, strings, datas e foto com upload de arquivo)**.
+O **CMH** é uma aplicação completa composta por uma **API REST em Laravel (PHP)** e um **aplicativo móvel em Expo (React Native + TypeScript)**. Projeto da disciplina de **Programação para Dispositivos Móveis (PDM 2026.2)** — *TP Entrega 1*, focando no **CRUD completo de Imóveis (anúncios de venda e aluguel) com múltiplos tipos de dados (números, strings, datas e foto com upload)**.
+
+> Entidade central: `imoveis`. Plus futuro (NÃO fazer na Entrega 1): `visitas` (agendamento de visitas).
 
 ### Stack Técnica Principal
 
@@ -14,10 +16,10 @@ O **CMH** é uma aplicação completa composta por uma **API REST em Laravel (PH
 | :--- | :--- | :--- |
 | **Backend** | Laravel 11 / 12 (PHP 8.2+) | API RESTful, Eloquent ORM, Form Requests, API Resources, Storage local público |
 | **Banco de Dados** | SQLite (dev) / PostgreSQL (prod) | Migrations versionadas com integridade referencial e índices |
-| **Frontend Mobile**| Expo SDK 52+ / React Native | Telas de listagem, visualização, cadastro e edição com upload de foto |
+| **Frontend Mobile**| Expo SDK 52+ / React Native | Telas de listagem, visualização, cadastro e edição de imóveis com foto |
 | **Linguagem Mobile**| TypeScript 5.x | Tipagem estrita, interfaces de domínio e DTOs |
 | **HTTP Client** | Axios / Fetch API | Configuração centralizada com timeout, interceptors e suporte a `multipart/form-data` |
-| **Mídia Mobile** | `expo-image-picker` | Captura de imagens da câmera e seleção da galeria |
+| **Mídia Mobile** | `expo-image-picker` | Captura da foto da fachada via câmera ou galeria |
 
 ---
 
@@ -25,10 +27,10 @@ O **CMH** é uma aplicação completa composta por uma **API REST em Laravel (PH
 
 Antes de propor alterações ou gerar código, **consulte obrigatoriamente**:
 
-1. **`requirements.md`** — Contém todos os Requisitos Funcionais (RF) e Não Funcionais (RNF), regras de negócio e validações de campos.
-2. **`specs.md`** — Contém a arquitetura detalhada, diagrama entidade-relacionamento (ERD), schemas JSON exatos de requisição/resposta e regras de upload.
+1. **`requirements.md`** — RF, RNF, regras de negócio e validações dos campos do imóvel.
+2. **`specs.md`** — Arquitetura, ERD da tabela `imoveis`, schemas JSON e regras de upload.
 
-> ⚠️ **Regra Fundamental:** Nunca invente rotas, campos no banco ou contratos de resposta que divirjam de `specs.md` e `requirements.md`. Se uma alteração for necessária, atualize primeiro a documentação.
+> ⚠️ **Regra Fundamental:** Nunca invente rotas, campos ou contratos que divirjam de `specs.md` e `requirements.md`. Se uma alteração for necessária, atualize primeiro a documentação.
 
 ---
 
@@ -43,48 +45,48 @@ backend/
 │   │   ├── Controllers/
 │   │   │   └── Api/
 │   │   │       └── V1/
-│   │   │           └── UsuarioController.php     # Controller REST da API
+│   │   │           └── ImovelController.php      # Controller REST da API
 │   │   ├── Requests/
-│   │   │   ├── StoreUsuarioRequest.php           # Validação para criação
-│   │   │   └── UpdateUsuarioRequest.php          # Validação para edição
+│   │   │   ├── StoreImovelRequest.php            # Validação para criação
+│   │   │   └── UpdateImovelRequest.php           # Validação para edição
 │   │   └── Resources/
-│   │       ├── UsuarioResource.php               # Serialização JSON individual
-│   │       └── UsuarioCollection.php             # Serialização de listas paginadas
+│   │       ├── ImovelResource.php                # Serialização JSON individual
+│   │       └── ImovelCollection.php              # Serialização de listas paginadas
 │   └── Models/
-│       └── Usuario.php                           # Model Eloquent com casts e acessores
+│       └── Imovel.php                            # Model Eloquent com casts e acessores
 ├── database/
-│   ├── migrations/                               # Migration de criação da tabela usuarios
+│   ├── migrations/                               # Migration create_imoveis_table
 │   ├── factories/
-│   │   └── UsuarioFactory.php                    # Factory com Faker para testes
+│   │   └── ImovelFactory.php                     # Factory com Faker para testes
 │   └── seeders/
-│       └── UsuarioSeeder.php                     # Seeder com registros fictícios
+│       └── ImovelSeeder.php                      # Seeder com anúncios fictícios
 ├── routes/
-│   └── api.php                                   # Rotas versionadas sob /api/v1/...
+│   └── api.php                                   # Rotas versionadas sob /api/v1/imoveis
 ├── storage/
 │   └── app/
 │       └── public/
-│           └── usuarios/                         # Fotos salvas no disco público
+│           └── imoveis/                          # Fotos salvas no disco público
 └── tests/
     └── Feature/
-        └── UsuarioApiTest.php                    # Testes de integração de todos os endpoints
+        └── ImovelApiTest.php                     # Testes de integração de todos os endpoints
 ```
 
 ### Regras Mandatórias para Laravel
 
-1. **Sem lógica de validação no Controller:** Toda validação de entrada de dados deve residir em Form Requests (`StoreUsuarioRequest`, `UpdateUsuarioRequest`).
-2. **Respostas padronizadas com Resources:** Nunca retorne instâncias puras de Eloquent no Controller. Sempre use `new UsuarioResource($usuario)` ou `UsuarioResource::collection($usuarios)`.
+1. **Sem validação no Controller:** Toda validação em Form Requests (`StoreImovelRequest`, `UpdateImovelRequest`). Incluir `in:casa,apartamento,kitnet,comercial,terreno`, `in:venda,aluguel`, `preco|min:0`, `data_disponibilidade|after_or_equal:today`.
+2. **Respostas com Resources:** Sempre `new ImovelResource($imovel)` ou `ImovelResource::collection($imoveis)`. Nunca retornar Eloquent puro.
 3. **Upload e Tratamento de Fotos:**
-   - As fotos devem ser validadas como arquivos de imagem válidos (`image|mimes:jpeg,png,jpg,webp|max:2048`).
-   - Salve os arquivos utilizando `Storage::disk('public')->putFile('usuarios', $request->file('foto'))`.
-   - Ao atualizar ou excluir um usuário, verifique se existia foto anterior e remova o arquivo do disco com `Storage::disk('public')->delete(...)`.
-   - O model deve expor um acessor `getFotoUrlAttribute()` que utiliza `asset(Storage::url($this->foto))` para fornecer a URL pública completa para o app mobile.
-4. **Tratamento de Exceções e Códigos HTTP:**
-   - `200 OK`: Requisições GET e atualizações bem-sucedidas.
-   - `201 Created`: Criação bem-sucedida de usuário.
-   - `204 No Content`: Exclusão bem-sucedida.
-   - `404 Not Found`: ID de usuário inexistente no banco.
-   - `422 Unprocessable Entity`: Falha na validação dos campos com array detalhado de mensagens.
-   - `500 Internal Server Error`: Erro inesperado com mensagem genérica em produção.
+   - Validar com `image|mimes:jpeg,png,jpg,webp|max:2048`.
+   - Salvar com `Storage::disk('public')->putFile('imoveis', $request->file('foto'))`.
+   - Ao atualizar/excluir, remover foto antiga com `Storage::disk('public')->delete(...)`.
+   - Model expõe `getFotoUrlAttribute()` com `asset(Storage::url($this->foto))`.
+4. **Códigos HTTP:**
+   - `200 OK`: GET e updates.
+   - `201 Created`: criação.
+   - `204 No Content`: exclusão.
+   - `404 Not Found`: ID inexistente.
+   - `422 Unprocessable Entity`: falha de validação.
+   - `500 Internal Server Error`: erro inesperado.
 
 ---
 
@@ -99,36 +101,37 @@ mobile/
 │   ├── assets/                     # Imagens estáticas, logos e ícones
 │   ├── components/                 # Componentes reutilizáveis
 │   │   ├── common/                 # Botões, inputs, loaders, badges
-│   │   └── usuario/                # Card de usuário, avatar com fallback, etc.
-│   ├── hooks/                      # Custom hooks (useUsuarios, useImagePicker)
+│   │   └── imovel/                 # ImovelCard, ImovelAvatar com fallback, etc.
+│   ├── hooks/                      # Custom hooks (useImoveis, useImagePicker)
 │   ├── navigation/                 # Navegação em pilha (Stack Navigator)
 │   ├── screens/                    # Telas da aplicação
-│   │   ├── UsuarioListScreen.tsx   # Listagem com busca, refresh e scroll infinito
-│   │   ├── UsuarioDetailScreen.tsx # Visualização completa de todos os 7+ atributos
-│   │   └── UsuarioFormScreen.tsx   # Formulário unificado (Criação e Edição) com foto
+│   │   ├── ImovelListScreen.tsx    # Listagem com busca, filtros e refresh
+│   │   ├── ImovelDetailScreen.tsx  # Visualização completa do anúncio
+│   │   └── ImovelFormScreen.tsx    # Formulário unificado (criação/edição) com foto
 │   ├── services/                   # Integração com a API REST
-│   │   ├── api.ts                  # Instância configurada do Axios
-│   │   └── usuarioService.ts       # Funções de CRUD (list, getById, create, update, delete)
-│   ├── types/                      # Interfaces TypeScript (Usuario, CreateUsuarioDTO, etc.)
-│   └── utils/                      # Formatadores de CPF, telefone, data e moeda
-├── App.tsx                         # Ponto de entrada do aplicativo
+│   │   ├── api.ts                  # Instância Axios configurada
+│   │   └── imovelService.ts        # CRUD (list, getById, create, update, delete)
+│   ├── types/                      # Interfaces (Imovel, CreateImovelDTO, Filtros)
+│   └── utils/                      # Formatadores de moeda, data, telefone, área
+├── App.tsx                         # Ponto de entrada
 ├── app.json                        # Configuração do Expo
-└── tsconfig.json                   # Configuração estrita do TypeScript
+└── tsconfig.json                   # TypeScript estrito
 ```
 
 ### Regras Mandatórias para Expo / TypeScript
 
-1. **Tipagem Estrita:** Não utilize `any`. Crie interfaces em `types/usuario.ts` para dados do usuário, erros da API e parâmetros de navegação.
-2. **Envio de Fotos via Multipart:** Ao criar ou editar usuário com imagem, envie a requisição com `Content-Type: multipart/form-data`, montando um objeto `FormData` com `{ uri, name, type }` da imagem selecionada pelo `expo-image-picker`.
-3. **Feedback Visual:** Implemente estados de loading (`ActivityIndicator`), tratamento de mensagens de erro amigáveis e diálogos de confirmação antes de ações destrutivas (excluir cadastro).
-4. **Formatadores Auxiliares:** Crie funções utilitárias para formatar CPF (`000.000.000-00`), telefone `(XX) XXXXX-XXXX`, data (`DD/MM/YYYY`) e salário (`R$ 0.000,00`).
+1. **Tipagem Estrita:** Não utilize `any`. Interfaces em `types/imovel.ts` (`Imovel`, `CreateImovelDTO`, `ImovelFiltros`).
+2. **Multipart:** Enviar foto como `FormData` com `{ uri, name, type }` e header `multipart/form-data`. Em update com foto, incluir `_method=PUT`.
+3. **Feedback Visual:** `ActivityIndicator` para loading, mensagens de erro em português, `Alert.alert` antes de excluir.
+4. **Formatadores:** Preço (`R$ 2.500,00/mês` ou `R$ 350.000,00`), área (`120,5 m²`), data (`DD/MM/YYYY`), telefone `(XX) XXXXX-XXXX`. Badges para `tipo`/`finalidade`.
 
 ---
 
 ## Checklist de Conclusão de Tarefas
 
 Antes de finalizar qualquer tarefa, certifique-se de que:
-- [ ] O código segue estritamente PSR-12 (PHP) e as regras do TypeScript.
+- [ ] O código segue PSR-12 (PHP) e TypeScript estrito.
 - [ ] Os campos obrigatórios do edital (números, strings, datas e foto) foram respeitados.
-- [ ] As rotas e payloads batem exatamente com o especificado em `specs.md`.
-- [ ] A documentação foi atualizada caso novos comportamentos ou variáveis de ambiente tenham sido adicionados.
+- [ ] As rotas e payloads batem exatamente com `specs.md`.
+- [ ] A documentação foi atualizada caso novos comportamentos tenham sido adicionados.
+- [ ] Nenhum resquício da antiga entidade `usuarios` permanece (buscar por `Usuario`, `usuario`, `cpf`, `salario`).
