@@ -1,15 +1,17 @@
-# Especificação Técnica — CMH
+# Especificação Técnica — CMH (Cadastro Móvel Habitacional)
 
-Este documento descreve a arquitetura técnica, o modelo de dados relacional, o catálogo completo de rotas da API REST, os schemas JSON de requisição e resposta, o fluxo de armazenamento de mídia e o design do cliente mobile em Expo com TypeScript.
+Este documento descreve a arquitetura técnica, o modelo de dados relacional, o catálogo completo de rotas da API REST, os schemas JSON de requisição e resposta, o fluxo de armazenamento de mídia e o design do cliente mobile em Expo com TypeScript. Entidade central da Entrega 1: **`imoveis`**.
+
+> Plus futuro (fora da Entrega 1): `visitas` (`id`, `imovel_id` FK, `nome_visitante`, `telefone`, `data_visita`) — agendamento de visitas. Não implementar agora.
 
 ---
 
 ## 1. Visão Geral da Arquitetura
 
-O sistema **CMH** adota uma arquitetura clássica desacoplada em duas camadas principais:
+O sistema **CMH** adota arquitetura desacoplada em duas camadas:
 
-1. **Backend (API REST):** Desenvolvido em **PHP / Laravel**, responsável pela persistência em banco relacional, regras de negócio, validação de integridade dos dados e gestão do armazenamento de arquivos de foto.
-2. **Frontend (Mobile App):** Desenvolvido em **React Native com Expo e TypeScript**, consumindo a API REST de forma assíncrona para operações de CRUD e manipulação de mídia através do dispositivo físico ou emulador.
+1. **Backend (API REST):** **PHP / Laravel**, persistência relacional, regras de negócio, validação e storage de fotos da fachada.
+2. **Frontend (Mobile App):** **React Native com Expo + TypeScript**, CRUD de anúncios de imóveis com foto.
 
 ### Diagrama Arquitetural
 
@@ -21,25 +23,25 @@ O sistema **CMH** adota uma arquitetura clássica desacoplada em duas camadas pr
 │  - expo-image-picker (Câmera & Galeria)                     │
 │  - Axios Client (Interceptors, FormData & Timeout)          │
 └──────────────────────────────┬──────────────────────────────┘
-                               │
-                               │ HTTPS / HTTP (JSON & Multipart/form-data)
-                               │
+                                │
+                                │ HTTPS / HTTP (JSON & Multipart/form-data)
+                                │
 ┌──────────────────────────────▼──────────────────────────────┐
 │                  SERVIDOR BACKEND (LARAVEL)                 │
 │  - Routes (`routes/api.php` sob prefixo `/api/v1`)          │
-│  - Form Requests (StoreUsuarioRequest, UpdateUsuarioRequest)│
-│  - Controllers (Api\V1\UsuarioController)                   │
-│  - Eloquent ORM (App\Models\Usuario)                        │
-│  - API Resources (UsuarioResource, UsuarioCollection)       │
+│  - Form Requests (StoreImovelRequest, UpdateImovelRequest)  │
+│  - Controllers (Api\V1\ImovelController)                    │
+│  - Eloquent ORM (App\Models\Imovel)                         │
+│  - API Resources (ImovelResource, ImovelCollection)         │
 └───────────────────┬─────────────────────┬───────────────────┘
-                    │                     │
-          SQL / PDO │                     │ Filesystem Disk
-                    ▼                     ▼
+                     │                     │
+           SQL / PDO │                     │ Filesystem Disk
+                     ▼                     ▼
 ┌──────────────────────────────┐   ┌──────────────────────────┐
 │        BANCO DE DADOS        │   │     LARAVEL STORAGE      │
 │     SQLite / PostgreSQL      │   │  storage/app/public/     │
-│   Tabela relacional:         │   │  usuarios/               │
-│   `usuarios`                 │   │  (Link simbólico public) │
+│   Tabela relacional:         │   │  imoveis/                │
+│   `imoveis`                  │   │  (Link simbólico public) │
 └──────────────────────────────┘   └──────────────────────────┘
 ```
 
@@ -47,14 +49,14 @@ O sistema **CMH** adota uma arquitetura clássica desacoplada em duas camadas pr
 
 | Tecnologia | Responsabilidade Principal |
 | :--- | :--- |
-| **Laravel 11 / 12** | Núcleo do backend, roteamento RESTful, injeção de dependências e segurança. |
-| **Eloquent ORM** | Mapeamento objeto-relacional, tratamento de mutators, casts e relacionamento de dados. |
-| **Form Requests** | Centralização isolada das regras de validação e autorização de requisições. |
-| **API Resources** | Transformação, filtragem e padronização dos dados serializados em JSON. |
-| **Expo SDK** | Framework de desenvolvimento mobile multiplataforma (Android e iOS). |
-| **TypeScript** | Segurança de tipos em tempo de compilação, autocompletação e redução de bugs em tempo de execução. |
-| **Axios** | Execução de chamadas HTTP, envio de headers e montagem de payloads `multipart/form-data`. |
-| **expo-image-picker** | Gerenciamento de permissões do sistema operacional e captura de fotos locais. |
+| **Laravel 11 / 12** | Roteamento RESTful, DI e segurança. |
+| **Eloquent ORM** | Mapeamento, casts (`preco`, `area_m2` decimal, `disponivel` boolean, `data_disponibilidade` date). |
+| **Form Requests** | Validação isolada (enum tipo/finalidade, preço, datas). |
+| **API Resources** | Serialização JSON padronizada + `foto_url`. |
+| **Expo SDK** | App multiplataforma (Android e iOS). |
+| **TypeScript** | Tipos de domínio (`Imovel`, DTOs). |
+| **Axios** | Chamadas HTTP + `multipart/form-data`. |
+| **expo-image-picker** | Permissões e captura da foto do imóvel. |
 
 ---
 
@@ -64,83 +66,102 @@ O sistema **CMH** adota uma arquitetura clássica desacoplada em duas camadas pr
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│                        usuarios                           │
+│                        imoveis                            │
 ├───────────────────────┬───────────────────┬───────────────┤
 │ id                    │ BIGINT UNSIGNED   │ PK, AUTO_INC  │
-│ nome                  │ VARCHAR(150)      │ NOT NULL      │
-│ email                 │ VARCHAR(150)      │ NOT NULL, UNIQ│
-│ telefone              │ VARCHAR(20)       │ NOT NULL      │
-│ cpf                   │ VARCHAR(14)       │ NOT NULL, UNIQ│
-│ idade                 │ INTEGER           │ NOT NULL      │
-│ salario               │ DECIMAL(10,2)     │ NULLABLE      │
-│ data_nascimento       │ DATE              │ NOT NULL      │
-│ data_admissao         │ DATE              │ NULLABLE      │
+│ titulo                │ VARCHAR(150)      │ NOT NULL      │
+│ descricao             │ TEXT              │ NULLABLE      │
+│ tipo                  │ VARCHAR(20)       │ NOT NULL      │
+│ finalidade            │ VARCHAR(10)       │ NOT NULL      │
+│ endereco              │ VARCHAR(200)      │ NOT NULL      │
+│ cidade                │ VARCHAR(100)      │ NOT NULL      │
+│ preco                 │ DECIMAL(12,2)     │ NOT NULL      │
+│ area_m2               │ DECIMAL(8,2)      │ NOT NULL      │
+│ quartos               │ INTEGER           │ NOT NULL      │
+│ banheiros             │ INTEGER           │ NOT NULL      │
+│ vagas                 │ INTEGER           │ DEFAULT 0     │
+│ data_disponibilidade  │ DATE              │ NOT NULL      │
 │ foto                  │ VARCHAR(255)      │ NULLABLE      │
-│ ativo                 │ BOOLEAN           │ DEFAULT TRUE  │
-│ bio                   │ TEXT              │ NULLABLE      │
+│ disponivel            │ BOOLEAN           │ DEFAULT TRUE  │
+│ contato_telefone      │ VARCHAR(20)       │ NOT NULL      │
 │ created_at            │ TIMESTAMP         │ NULLABLE      │
 │ updated_at            │ TIMESTAMP         │ NULLABLE      │
 └───────────────────────┴───────────────────┴───────────────┘
+
+(Plus futuro, NÃO criar na Entrega 1)
+visitas.id → visitas.imovel_id FK → imoveis.id
 ```
 
-### Dicionário de Dados (`usuarios`)
+### Dicionário de Dados (`imoveis`)
 
-| Coluna | Tipo SQL | Chave | Nulo? | Padrão | Descrição |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `id` | `BIGINT UNSIGNED` | PK | Não | *auto_increment* | Identificador primário numérico do registro. |
-| `nome` | `VARCHAR(150)` | - | Não | - | Nome completo do usuário/colaborador. |
-| `email` | `VARCHAR(150)` | UK | Não | - | E-mail corporativo ou pessoal exclusivo. |
-| `telefone` | `VARCHAR(20)` | - | Não | - | Telefone de contato (fixo ou celular). |
-| `cpf` | `VARCHAR(14)` | UK | Não | - | CPF no formato `000.000.000-00`. |
-| `idade` | `INTEGER` | - | Não | - | Idade em anos (número inteiro positivo). |
-| `salario` | `DECIMAL(10,2)` | - | Sim | `null` | Remuneração mensal contratual. |
-| `data_nascimento` | `DATE` | - | Não | - | Data de nascimento no padrão ISO (`YYYY-MM-DD`). |
-| `data_admissao` | `DATE` | - | Sim | `null` | Data de admissão ou entrada no sistema. |
-| `foto` | `VARCHAR(255)` | - | Sim | `null` | Caminho relativo do arquivo no storage local. |
-| `ativo` | `BOOLEAN` | - | Não | `true` | Status ativo (`true`) ou inativo (`false`). |
-| `bio` | `TEXT` | - | Sim | `null` | Descrição biográfica ou observações gerais. |
-| `created_at` | `TIMESTAMP` | - | Sim | `CURRENT_TIMESTAMP` | Data e hora de inclusão do registro. |
-| `updated_at` | `TIMESTAMP` | - | Sim | `CURRENT_TIMESTAMP` | Data e hora da última modificação. |
+| Coluna | Tipo SQL | Nulo? | Padrão | Descrição |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` PK | Não | auto_increment | Identificador do anúncio. |
+| `titulo` | `VARCHAR(150)` | Não | - | Título do anúncio. |
+| `descricao` | `TEXT` | Sim | `null` | Detalhes, diferenciais. |
+| `tipo` | `VARCHAR(20)` | Não | - | `casa\|apartamento\|kitnet\|comercial\|terreno`. |
+| `finalidade` | `VARCHAR(10)` | Não | - | `venda\|aluguel`. |
+| `endereco` | `VARCHAR(200)` | Não | - | Rua, número, bairro. |
+| `cidade` | `VARCHAR(100)` | Não | - | Cidade/UF. |
+| `preco` | `DECIMAL(12,2)` | Não | - | Preço venda ou aluguel mensal. |
+| `area_m2` | `DECIMAL(8,2)` | Não | - | Área em m². |
+| `quartos` | `INTEGER` | Não | - | Dormitórios. |
+| `banheiros` | `INTEGER` | Não | - | Banheiros. |
+| `vagas` | `INTEGER` | Não | `0` | Vagas de garagem. |
+| `data_disponibilidade` | `DATE` | Não | - | Data a partir da qual está disponível (`YYYY-MM-DD`). |
+| `foto` | `VARCHAR(255)` | Sim | `null` | Caminho relativo no storage. |
+| `disponivel` | `BOOLEAN` | Não | `true` | Anúncio ativo ou pausado. |
+| `contato_telefone` | `VARCHAR(20)` | Não | - | Telefone do anunciante. |
+| `created_at` | `TIMESTAMP` | Sim | now | Criação. |
+| `updated_at` | `TIMESTAMP` | Sim | now | Atualização. |
 
 ---
 
 ## 3. Rotas da API REST
 
-Todas as rotas são prefixadas por `/api/v1` e produzem respostas com `Content-Type: application/json`.
+Prefixo `/api/v1`, `Content-Type: application/json`.
 
-### 3.1. `GET /api/v1/usuarios`
-Retorna a listagem paginada de usuários cadastrados.
+### 3.1. `GET /api/v1/imoveis`
+Listagem paginada com filtros (atende RF-02).
 
 - **Query Parameters:**
-  - `page` (int, opcional): Número da página (padrão: `1`).
-  - `per_page` (int, opcional): Quantidade de itens por página (padrão: `15`, máx: `100`).
-  - `busca` (string, opcional): Termo de busca por `nome` ou `email`.
-  - `ativo` (boolean, opcional): Filtrar apenas ativos (`true`) ou inativos (`false`).
+  - `page` (int): padrão `1`.
+  - `per_page` (int): padrão `15`, máx `100`.
+  - `busca` (string): busca em `titulo` e `endereco`.
+  - `tipo` (string): `casa|apartamento|kitnet|comercial|terreno`.
+  - `finalidade` (string): `venda|aluguel`.
+  - `cidade` (string): busca parcial.
+  - `disponivel` (boolean): `true|false`.
+  - `preco_min`, `preco_max` (numeric).
 
-- **Resposta de Sucesso (`200 OK`):**
+- **Resposta `200 OK`:**
 ```json
 {
   "data": [
     {
       "id": 1,
-      "nome": "Carlos Silva",
-      "email": "carlos.silva@exemplo.com",
-      "telefone": "(11) 98765-4321",
-      "cpf": "123.456.789-00",
-      "idade": 28,
-      "salario": 4500.00,
-      "data_nascimento": "1998-05-14",
-      "data_admissao": "2024-02-01",
-      "foto_url": "http://192.168.1.100:8000/storage/usuarios/carlos_198273.jpg",
-      "ativo": true,
-      "bio": "Desenvolvedor de software focado em sistemas mobile e web.",
+      "titulo": "Casa 3 quartos c/ quintal",
+      "descricao": "Casa ampla perto da praia, quintal e churrasqueira.",
+      "tipo": "casa",
+      "finalidade": "aluguel",
+      "endereco": "Rua das Palmeiras, 123 - Centro",
+      "cidade": "Praia Grande/SP",
+      "preco": 2500.00,
+      "area_m2": 120.50,
+      "quartos": 3,
+      "banheiros": 2,
+      "vagas": 1,
+      "data_disponibilidade": "2026-10-01",
+      "foto_url": "http://192.168.1.100:8000/storage/imoveis/casa_198273.jpg",
+      "disponivel": true,
+      "contato_telefone": "(13) 99999-1234",
       "created_at": "2026-09-02T15:30:00.000000Z",
       "updated_at": "2026-09-02T15:30:00.000000Z"
     }
   ],
   "links": {
-    "first": "http://192.168.1.100:8000/api/v1/usuarios?page=1",
-    "last": "http://192.168.1.100:8000/api/v1/usuarios?page=1",
+    "first": "http://192.168.1.100:8000/api/v1/imoveis?page=1",
+    "last": "http://192.168.1.100:8000/api/v1/imoveis?page=1",
     "prev": null,
     "next": null
   },
@@ -157,52 +178,60 @@ Retorna a listagem paginada de usuários cadastrados.
 
 ---
 
-### 3.2. `POST /api/v1/usuarios`
-Cria um novo usuário no sistema. Recomenda-se enviar com `Content-Type: multipart/form-data` caso haja upload de foto.
+### 3.2. `POST /api/v1/imoveis`
+Cria anúncio. Usar `multipart/form-data` se houver foto.
 
-- **Request Body (Campos `multipart/form-data` ou `application/json`):**
-  - `nome` (string, obrigatório): `"Mariana Souza"`
-  - `email` (string, obrigatório, email): `"mariana.souza@exemplo.com"`
-  - `telefone` (string, obrigatório): `"(21) 99887-6655"`
-  - `cpf` (string, obrigatório): `"987.654.321-99"`
-  - `idade` (int, obrigatório): `24`
-  - `salario` (numeric, opcional): `5200.50`
-  - `data_nascimento` (date, obrigatório, formato `YYYY-MM-DD`): `"2002-08-20"`
-  - `data_admissao` (date, opcional, formato `YYYY-MM-DD`): `"2025-01-15"`
-  - `foto` (file, opcional): Arquivo binário de imagem (JPEG, PNG, WEBP até 2048 KB)
-  - `ativo` (boolean, opcional): `true`
-  - `bio` (string, opcional): `"Especialista em qualidade de software e testes."`
+- **Body:**
+  - `titulo` (string, obrigatório, 5-150)
+  - `descricao` (string, opcional)
+  - `tipo` (obrigatório, in:casa,apartamento,kitnet,comercial,terreno)
+  - `finalidade` (obrigatório, in:venda,aluguel)
+  - `endereco` (obrigatório, max 200)
+  - `cidade` (obrigatório, max 100)
+  - `preco` (numeric, obrigatório, min:0)
+  - `area_m2` (numeric, obrigatório, min:0.01)
+  - `quartos` (int, obrigatório, 0-50)
+  - `banheiros` (int, obrigatório, 0-20)
+  - `vagas` (int, opcional, 0-20)
+  - `data_disponibilidade` (date `YYYY-MM-DD`, obrigatório, after_or_equal:today)
+  - `foto` (file, opcional, jpeg,png,jpg,webp, max 2048)
+  - `disponivel` (boolean, opcional)
+  - `contato_telefone` (obrigatório)
 
-- **Resposta de Sucesso (`201 Created`):**
+- **Resposta `201 Created`:**
 ```json
 {
-  "message": "Usuário cadastrado com sucesso!",
+  "message": "Imóvel cadastrado com sucesso!",
   "data": {
     "id": 2,
-    "nome": "Mariana Souza",
-    "email": "mariana.souza@exemplo.com",
-    "telefone": "(21) 99887-6655",
-    "cpf": "987.654.321-99",
-    "idade": 24,
-    "salario": 5200.50,
-    "data_nascimento": "2002-08-20",
-    "data_admissao": "2025-01-15",
-    "foto_url": "http://192.168.1.100:8000/storage/usuarios/mariana_876543.png",
-    "ativo": true,
-    "bio": "Especialista em qualidade de software e testes.",
+    "titulo": "Apartamento 2 quartos mobiliado",
+    "tipo": "apartamento",
+    "finalidade": "aluguel",
+    "endereco": "Av. Central, 500 - Ap 12",
+    "cidade": "São Vicente/SP",
+    "preco": 1800.00,
+    "area_m2": 65.00,
+    "quartos": 2,
+    "banheiros": 1,
+    "vagas": 1,
+    "data_disponibilidade": "2026-10-15",
+    "foto_url": "http://192.168.1.100:8000/storage/imoveis/apto_876543.png",
+    "disponivel": true,
+    "contato_telefone": "(13) 98888-6655",
     "created_at": "2026-09-02T16:00:00.000000Z",
     "updated_at": "2026-09-02T16:00:00.000000Z"
   }
 }
 ```
 
-- **Resposta de Erro de Validação (`422 Unprocessable Entity`):**
+- **Erro `422`:**
 ```json
 {
   "message": "Os dados fornecidos são inválidos.",
   "errors": {
-    "email": ["O e-mail informado já está em uso."],
-    "cpf": ["O CPF já está cadastrado no sistema."],
+    "tipo": ["O tipo selecionado é inválido."],
+    "preco": ["O preço deve ser maior ou igual a 0."],
+    "data_disponibilidade": ["A data de disponibilidade deve ser hoje ou futura."],
     "foto": ["O arquivo enviado deve ser uma imagem válida (jpeg, png, webp) de até 2MB."]
   }
 }
@@ -210,62 +239,27 @@ Cria um novo usuário no sistema. Recomenda-se enviar com `Content-Type: multipa
 
 ---
 
-### 3.3. `GET /api/v1/usuarios/{id}`
-Obtém todos os detalhes cadastrais de um usuário específico.
-
-- **Resposta de Sucesso (`200 OK`):**
+### 3.3. `GET /api/v1/imoveis/{id}`
+Detalhe do anúncio. `404` se inexistente:
 ```json
-{
-  "data": {
-    "id": 1,
-    "nome": "Carlos Silva",
-    "email": "carlos.silva@exemplo.com",
-    "telefone": "(11) 98765-4321",
-    "cpf": "123.456.789-00",
-    "idade": 28,
-    "salario": 4500.00,
-    "data_nascimento": "1998-05-14",
-    "data_admissao": "2024-02-01",
-    "foto_url": "http://192.168.1.100:8000/storage/usuarios/carlos_198273.jpg",
-    "ativo": true,
-    "bio": "Desenvolvedor de software focado em sistemas mobile e web.",
-    "created_at": "2026-09-02T15:30:00.000000Z",
-    "updated_at": "2026-09-02T15:30:00.000000Z"
-  }
-}
-```
-
-- **Resposta de Registro Não Encontrado (`404 Not Found`):**
-```json
-{
-  "message": "Usuário não encontrado."
-}
+{ "message": "Imóvel não encontrado." }
 ```
 
 ---
 
-### 3.4. `PUT` ou `POST /api/v1/usuarios/{id}`
-Atualiza dados cadastrais.  
-> ⚠️ **Nota Técnica sobre PHP/Laravel:** O PHP não popula a superglobal `$_FILES` nativamente em requisições HTTP `PUT` com multipart. Por isso, ao enviar nova foto na atualização, envie a requisição como `POST /api/v1/usuarios/{id}` incluindo o campo `_method=PUT` no FormData.
+### 3.4. `PUT` ou `POST /api/v1/imoveis/{id}`
+Atualiza anúncio.
+> ⚠️ PHP/Laravel não popula `$_FILES` em `PUT` multipart. Enviar como `POST` com `_method=PUT` no FormData quando houver foto.
 
-- **Resposta de Sucesso (`200 OK`):**
+- **Resposta `200 OK`:**
 ```json
 {
-  "message": "Usuário atualizado com sucesso!",
+  "message": "Imóvel atualizado com sucesso!",
   "data": {
     "id": 1,
-    "nome": "Carlos Silva Santos",
-    "email": "carlos.santos@exemplo.com",
-    "telefone": "(11) 98765-4321",
-    "cpf": "123.456.789-00",
-    "idade": 28,
-    "salario": 5000.00,
-    "data_nascimento": "1998-05-14",
-    "data_admissao": "2024-02-01",
-    "foto_url": "http://192.168.1.100:8000/storage/usuarios/novo_carlos_991823.jpg",
-    "ativo": true,
-    "bio": "Desenvolvedor Tech Lead.",
-    "created_at": "2026-09-02T15:30:00.000000Z",
+    "titulo": "Casa 3 quartos c/ quintal e piscina",
+    "preco": 2700.00,
+    "disponivel": true,
     "updated_at": "2026-09-02T16:45:00.000000Z"
   }
 }
@@ -273,24 +267,20 @@ Atualiza dados cadastrais.
 
 ---
 
-### 3.5. `DELETE /api/v1/usuarios/{id}`
-Remove permanentemente o usuário e apaga o arquivo físico de sua foto no storage.
-
-- **Resposta de Sucesso (`204 No Content`):**
-Corpo vazio.
+### 3.5. `DELETE /api/v1/imoveis/{id}`
+Remove anúncio + apaga foto do storage. Resposta `204 No Content`, corpo vazio.
 
 ---
 
-### 3.6. `POST /api/v1/usuarios/{id}/foto`
-Endpoint rápido dedicado para envio exclusivo da imagem de perfil.
+### 3.6. `POST /api/v1/imoveis/{id}/foto`
+Troca só a foto de capa.
 
-- **Request Body (`multipart/form-data`):**
-  - `foto`: Arquivo binário de imagem.
-- **Resposta de Sucesso (`200 OK`):**
+- **Body (`multipart/form-data`):** `foto`: imagem.
+- **Resposta `200 OK`:**
 ```json
 {
-  "message": "Foto de perfil atualizada com sucesso!",
-  "foto_url": "http://192.168.1.100:8000/storage/usuarios/novo_hash_123.jpg"
+  "message": "Foto do imóvel atualizada com sucesso!",
+  "foto_url": "http://192.168.1.100:8000/storage/imoveis/novo_hash_123.jpg"
 }
 ```
 
@@ -298,66 +288,78 @@ Endpoint rápido dedicado para envio exclusivo da imagem de perfil.
 
 ## 4. Gestão e Armazenamento de Fotos
 
-1. **Validação de Arquivo:**
-   A validação nos Form Requests deve garantir que o arquivo seja estritamente de imagem:
+1. **Validação nos Form Requests:**
    ```php
    'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+   'tipo' => ['required', 'in:casa,apartamento,kitnet,comercial,terreno'],
+   'finalidade' => ['required', 'in:venda,aluguel'],
+   'preco' => ['required', 'numeric', 'min:0'],
+   'area_m2' => ['required', 'numeric', 'min:0.01'],
+   'data_disponibilidade' => ['required', 'date', 'after_or_equal:today'],
    ```
 2. **Armazenamento:**
-   O arquivo é salvo de maneira assíncrona/direta no disco público:
    ```php
-   $caminho = $request->file('foto')->store('usuarios', 'public');
+   $caminho = $request->file('foto')->store('imoveis', 'public');
    ```
-3. **Remoção de Arquivos Antigos:**
-   Antes de sobrescrever uma foto ou ao deletar um usuário:
+3. **Remoção de arquivos antigos:**
    ```php
-   if ($usuario->foto && Storage::disk('public')->exists($usuario->foto)) {
-       Storage::disk('public')->delete($usuario->foto);
+   if ($imovel->foto && Storage::disk('public')->exists($imovel->foto)) {
+       Storage::disk('public')->delete($imovel->foto);
    }
    ```
-4. **Symlink Público:**
-   O comando `php artisan storage:link` cria o link de `public/storage` apontando para `storage/app/public`, tornando o acesso via HTTP direto e performático.
+4. **Symlink:** `php artisan storage:link` expõe `public/storage` → `storage/app/public`.
 
 ---
 
 ## 5. Arquitetura do Frontend Mobile (Expo + TypeScript)
 
-### 5.1. Definições de Tipos TypeScript (`src/types/usuario.ts`)
+### 5.1. Tipos (`src/types/imovel.ts`)
 
 ```typescript
-export interface Usuario {
+export type TipoImovel = 'casa' | 'apartamento' | 'kitnet' | 'comercial' | 'terreno';
+export type FinalidadeImovel = 'venda' | 'aluguel';
+
+export interface Imovel {
   id: number;
-  nome: string;
-  email: string;
-  telefone: string;
-  cpf: string;
-  idade: number;
-  salario: number | null;
-  data_nascimento: string;
-  data_admissao: string | null;
+  titulo: string;
+  descricao: string | null;
+  tipo: TipoImovel;
+  finalidade: FinalidadeImovel;
+  endereco: string;
+  cidade: string;
+  preco: number;
+  area_m2: number;
+  quartos: number;
+  banheiros: number;
+  vagas: number;
+  data_disponibilidade: string;
   foto_url: string | null;
-  ativo: boolean;
-  bio: string | null;
+  disponivel: boolean;
+  contato_telefone: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateUsuarioDTO {
-  nome: string;
-  email: string;
-  telefone: string;
-  cpf: string;
-  idade: number;
-  salario?: number;
-  data_nascimento: string;
-  data_admissao?: string;
+export interface CreateImovelDTO {
+  titulo: string;
+  descricao?: string;
+  tipo: TipoImovel;
+  finalidade: FinalidadeImovel;
+  endereco: string;
+  cidade: string;
+  preco: number;
+  area_m2: number;
+  quartos: number;
+  banheiros: number;
+  vagas?: number;
+  data_disponibilidade: string;
   foto?: {
     uri: string;
     name: string;
     type: string;
   };
-  ativo?: boolean;
-  bio?: string;
+  disponivel?: boolean;
+  contato_telefone: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -369,44 +371,48 @@ export interface PaginatedResponse<T> {
     total: number;
   };
 }
+
+export interface ImovelFiltros {
+  busca?: string;
+  tipo?: TipoImovel;
+  finalidade?: FinalidadeImovel;
+  cidade?: string;
+  disponivel?: boolean;
+  preco_min?: number;
+  preco_max?: number;
+}
 ```
 
-### 5.2. Envio de FormData com Foto no React Native
+### 5.2. Envio de FormData com Foto
 
 ```typescript
-export async function cadastrarUsuario(dados: CreateUsuarioDTO): Promise<Usuario> {
+export async function cadastrarImovel(dados: CreateImovelDTO): Promise<Imovel> {
   const formData = new FormData();
-  formData.append('nome', dados.nome);
-  formData.append('email', dados.email);
-  formData.append('telefone', dados.telefone);
-  formData.append('cpf', dados.cpf);
-  formData.append('idade', String(dados.idade));
-  formData.append('data_nascimento', dados.data_nascimento);
+  formData.append('titulo', dados.titulo);
+  formData.append('tipo', dados.tipo);
+  formData.append('finalidade', dados.finalidade);
+  formData.append('endereco', dados.endereco);
+  formData.append('cidade', dados.cidade);
+  formData.append('preco', String(dados.preco));
+  formData.append('area_m2', String(dados.area_m2));
+  formData.append('quartos', String(dados.quartos));
+  formData.append('banheiros', String(dados.banheiros));
+  formData.append('data_disponibilidade', dados.data_disponibilidade);
+  formData.append('contato_telefone', dados.contato_telefone);
 
-  if (dados.salario !== undefined) {
-    formData.append('salario', String(dados.salario));
-  }
-  if (dados.data_admissao) {
-    formData.append('data_admissao', dados.data_admissao);
-  }
-  if (dados.bio) {
-    formData.append('bio', dados.bio);
-  }
-  if (dados.ativo !== undefined) {
-    formData.append('ativo', dados.ativo ? '1' : '0');
-  }
+  if (dados.descricao) formData.append('descricao', dados.descricao);
+  if (dados.vagas !== undefined) formData.append('vagas', String(dados.vagas));
+  if (dados.disponivel !== undefined) formData.append('disponivel', dados.disponivel ? '1' : '0');
   if (dados.foto) {
     formData.append('foto', {
       uri: dados.foto.uri,
-      name: dados.foto.name || 'foto.jpg',
+      name: dados.foto.name || 'fachada.jpg',
       type: dados.foto.type || 'image/jpeg',
     } as any);
   }
 
-  const response = await api.post('/usuarios', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+  const response = await api.post('/imoveis', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
 
   return response.data.data;
@@ -417,11 +423,9 @@ export async function cadastrarUsuario(dados: CreateUsuarioDTO): Promise<Usuario
 
 ## 6. Configuração de Rede e Testes Locais
 
-Para que o aplicativo Expo rodando em um dispositivo físico acesse a API local do Laravel:
-
-1. A máquina que executa o Laravel e o smartphone devem estar conectados na **mesma rede Wi-Fi**.
-2. O servidor Laravel deve ser iniciado com binding em todas as interfaces:
+1. Máquina do Laravel e smartphone na **mesma rede Wi-Fi**.
+2. Servidor com binding total:
    ```bash
    php artisan serve --host=0.0.0.0 --port=8000
    ```
-3. A variável `EXPO_PUBLIC_API_URL` no `.env` do Expo deve apontar para o endereço IPv4 local do computador (ex: `http://192.168.1.100:8000/api/v1`).
+3. `EXPO_PUBLIC_API_URL=http://192.168.1.100:8000/api/v1` no `.env` do Expo.
