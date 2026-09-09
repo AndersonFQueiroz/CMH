@@ -1,4 +1,4 @@
-# Requisitos do Projeto — CMH
+# Requisitos do Projeto — CMH (Cadastro Móvel Habitacional)
 
 Este documento descreve detalhadamente os **requisitos funcionais (RF)**, **requisitos não funcionais (RNF)** e as **regras de negócio (RN)** do projeto **CMH**, desenvolvido para a disciplina de **Programação para Dispositivos Móveis (PDM 2026.2)** — *TP Entrega 1*.
 
@@ -9,34 +9,42 @@ Este documento descreve detalhadamente os **requisitos funcionais (RF)**, **requ
 Conforme as instruções da entrega avaliativa:
 - **Objetivo:** Desenvolver uma API-REST em Laravel como backend do projeto para dispositivos móveis em Expo.
 - **Exigência Central:** CRUD completo de uma entidade de cadastro contendo, no mínimo, **7 atributos**, cobrindo obrigatoriamente:
-  - 🔢 **Números** (`id`, `idade`, `salario`)
-  - 🔤 **Strings** (`nome`, `email`, `telefone`, `cpf`, `bio`)
-  - 📅 **Datas** (`data_nascimento`, `data_admissao`, `created_at`, `updated_at`)
+  - 🔢 **Números** (`id`, `preco`, `area_m2`, `quartos`, `banheiros`, `vagas`)
+  - 🔤 **Strings** (`titulo`, `descricao`, `tipo`, `finalidade`, `endereco`, `cidade`, `contato_telefone`)
+  - 📅 **Datas** (`data_disponibilidade`, `created_at`, `updated_at`)
   - 📷 **Foto** (`foto`, `foto_url` com upload de arquivo via multipart)
-- **Tema:** Livre — Escolhido: **Gestão de Usuários e Colaboradores (CMH)**.
+- **Tema:** Livre — Escolhido: **Anúncios de Imóveis para Venda e Aluguel (CMH — Cadastro Móvel Habitacional)**.
 - **Equipe:** Anderson Ferreira Queiroz e demais integrantes do grupo.
+
+> Decisão de escopo: a entidade `visitas` (agendamento de visitas ao imóvel) fica como **plus futuro (Entrega 2+)**, fora do MVP da Entrega 1.
 
 ---
 
-## 📊 Matriz de Atributos da Entidade Usuário
+## 📊 Matriz de Atributos da Entidade Imóvel
 
-Para garantir conformidade acima do mínimo solicitado, o cadastro de Usuário possui **13 atributos**:
+Para garantir conformidade acima do mínimo solicitado, o cadastro de Imóvel possui **17 atributos**:
 
 | Atributo | Tipo de Dado | Categoria do Edital | Obrigatoriedade | Restrições e Validações |
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | Inteiro (BigInt) | **Número** | Automático | Chave primária autoincrementada. |
-| `nome` | Texto (Varchar 150)| **String** | Obrigatório | Mínimo 3 caracteres, máximo 150 caracteres. |
-| `email` | Texto (Varchar 150)| **String** | Obrigatório | Formato de e-mail válido e valor único no sistema. |
-| `telefone` | Texto (Varchar 20) | **String** | Obrigatório | Máscara `(XX) XXXXX-XXXX` ou `(XX) XXXX-XXXX`. |
-| `cpf` | Texto (Varchar 14) | **String** | Obrigatório | Máscara `XXX.XXX.XXX-XX`, 11 dígitos numéricos, único. |
-| `idade` | Inteiro (Integer) | **Número** | Obrigatório | Valor entre 0 e 120 anos, coerente com a data de nascimento. |
-| `salario` | Decimal (10, 2) | **Número** | Opcional | Valor decimal monetário maior ou igual a 0.00. |
-| `data_nascimento` | Data (Date) | **Data** | Obrigatório | Formato `YYYY-MM-DD`, data anterior ao dia atual. |
-| `data_admissao` | Data (Date) | **Data** | Opcional | Formato `YYYY-MM-DD`, data de entrada no sistema. |
-| `foto` | Texto (Varchar 255)| **Foto** | Opcional | Caminho do arquivo gravado no storage (`usuarios/...`). |
-| `foto_url` | Texto (URL virtual) | **Foto** | Virtual | URL completa acessível via HTTP para carregamento no app. |
-| `ativo` | Booleano (Boolean)| *Controle* | Opcional (Default: true) | Indica status do registro (`true` para ativo, `false` para inativo). |
-| `bio` | Texto Longo (Text) | **String** | Opcional | Observações, perfil profissional ou biografia resumida. |
+| `titulo` | Texto (Varchar 150) | **String** | Obrigatório | Mínimo 5, máximo 150 caracteres. Ex: "Casa 3 quartos c/ quintal". |
+| `descricao` | Texto Longo (Text) | **String** | Opcional | Descrição do imóvel, diferenciais, regras. |
+| `tipo` | Enum string (Varchar 20) | **String** | Obrigatório | Um de: `casa`, `apartamento`, `kitnet`, `comercial`, `terreno`. |
+| `finalidade` | Enum string (Varchar 10) | **String** | Obrigatório | Um de: `venda`, `aluguel`. |
+| `endereco` | Texto (Varchar 200) | **String** | Obrigatório | Rua, número, bairro. Ex: "Rua X, 123 - Centro". |
+| `cidade` | Texto (Varchar 100) | **String** | Obrigatório | Cidade/UF. Ex: "Praia Grande/SP". |
+| `preco` | Decimal (12, 2) | **Número** | Obrigatório | Valor de venda ou aluguel mensal. `>= 0`. |
+| `area_m2` | Decimal (8, 2) | **Número** | Obrigatório | Área em m². `> 0`. |
+| `quartos` | Inteiro | **Número** | Obrigatório | `0` a `50`. Terreno = `0`. |
+| `banheiros` | Inteiro | **Número** | Obrigatório | `0` a `20`. |
+| `vagas` | Inteiro | **Número** | Opcional (Default: 0) | Vagas de garagem. `0` a `20`. |
+| `data_disponibilidade` | Data (Date) | **Data** | Obrigatório | Formato `YYYY-MM-DD`, `>= hoje`. |
+| `foto` | Texto (Varchar 255) | **Foto** | Opcional | Caminho do arquivo no storage (`imoveis/...`). |
+| `foto_url` | Texto (URL virtual) | **Foto** | Virtual | URL completa acessível via HTTP para o app. |
+| `disponivel` | Booleano | *Controle* | Opcional (Default: true) | `true` = anunciado, `false` = pausado/alugado/vendido. |
+| `contato_telefone` | Texto (Varchar 20) | **String** | Obrigatório | Máscara `(XX) XXXXX-XXXX` ou `(XX) XXXX-XXXX`. |
+| `created_at` | Timestamp | **Data** | Automático | Data/hora de criação. |
+| `updated_at` | Timestamp | **Data** | Automático | Data/hora da última atualização. |
 
 ---
 
@@ -46,26 +54,26 @@ Para garantir conformidade acima do mínimo solicitado, o cadastro de Usuário p
 
 | ID | Requisito | Prioridade | Descrição |
 | :--- | :--- | :--- | :--- |
-| **RF-01** | Listar Usuários | Alta | A API deve permitir a listagem de usuários com suporte a paginação e contagem total de registros. |
-| **RF-02** | Filtrar Usuários | Média | A listagem da API deve permitir filtros opcionais por `nome` (busca parcial), `email` e status `ativo`. |
-| **RF-03** | Visualizar Usuário | Alta | A API deve retornar todos os dados cadastrais de um usuário específico a partir de seu ID numérico. |
-| **RF-04** | Cadastrar Usuário | Alta | A API deve permitir a criação de um novo usuário recebendo os dados via requisição HTTP POST. |
-| **RF-05** | Upload de Foto | Alta | A criação e atualização de usuário devem aceitar arquivo de imagem (`multipart/form-data`) e armazená-lo no storage público do Laravel. |
-| **RF-06** | Atualizar Usuário | Alta | A API deve permitir a edição de todos os atributos cadastrais de um usuário através de seu ID. |
-| **RF-07** | Atualização Exclusiva de Foto | Média | A API deve prover um endpoint específico (`POST /api/v1/usuarios/{id}/foto`) para alterar apenas a imagem de perfil sem reenviar todos os dados. |
-| **RF-08** | Excluir Usuário | Alta | A API deve permitir a exclusão permanente de um usuário e remover o arquivo de foto correspondente do storage para evitar acúmulo de lixo. |
-| **RF-09** | Validação de Unicidade | Alta | O sistema deve rejeitar o cadastro ou atualização com e-mail ou CPF já utilizados por outro usuário, retornando código HTTP 422. |
+| **RF-01** | Listar Imóveis | Alta | A API deve permitir a listagem de imóveis com paginação e contagem total. |
+| **RF-02** | Filtrar Imóveis | Alta | A listagem deve permitir filtros por `busca` (título/endereço), `tipo`, `finalidade`, `cidade`, `disponivel`, `preco_min`, `preco_max`. |
+| **RF-03** | Visualizar Imóvel | Alta | A API deve retornar todos os dados de um imóvel a partir do ID numérico. |
+| **RF-04** | Cadastrar Imóvel | Alta | A API deve permitir a criação de um novo imóvel via POST. |
+| **RF-05** | Upload de Foto | Alta | A criação e atualização devem aceitar imagem (`multipart/form-data`) e armazená-la no storage público. |
+| **RF-06** | Atualizar Imóvel | Alta | A API deve permitir a edição de todos os atributos via ID. |
+| **RF-07** | Atualização Exclusiva de Foto | Média | Endpoint `POST /api/v1/imoveis/{id}/foto` para trocar só a foto da fachada. |
+| **RF-08** | Excluir Imóvel | Alta | Exclusão permanente + remoção do arquivo de foto do storage. |
+| **RF-09** | Validação de Domínio | Alta | Rejeitar `tipo`/`finalidade` inválidos, `preco` negativo, `data_disponibilidade` no passado. Retornar HTTP 422. |
 
 ### 2. Interface e Consumo no Frontend (Expo Mobile)
 
 | ID | Requisito | Prioridade | Descrição |
 | :--- | :--- | :--- | :--- |
-| **RF-10** | Tela de Listagem no App | Alta | O aplicativo deve exibir uma lista rolável (`FlatList`) de usuários cadastrados com foto de perfil, nome, e-mail e cargo/idade. |
-| **RF-11** | Pull-to-Refresh e Busca | Média | O usuário do aplicativo deve poder puxar a tela para atualizar a lista e digitar no campo de busca para filtrar por nome. |
-| **RF-12** | Tela de Detalhes | Alta | Ao tocar em um usuário da lista, o app deve abrir a tela com a foto ampliada e todos os 13 atributos formatados. |
-| **RF-13** | Formulário de Cadastro e Edição | Alta | O aplicativo deve fornecer formulário com campos devidamente tipados e máscaras para CPF, telefone, data de nascimento e salário. |
-| **RF-14** | Seleção de Foto (Câmera e Galeria) | Alta | O app deve integrar com o `expo-image-picker` solicitando permissões para tirar foto com a câmera ou escolher da galeria. |
-| **RF-15** | Confirmação de Exclusão | Média | O app deve exibir um diálogo de alerta (`Alert.alert`) solicitando confirmação antes de disparar a deleção do registro na API. |
+| **RF-10** | Tela de Listagem no App | Alta | Lista rolável (`FlatList`) com foto, título, preço, cidade, badges de tipo/finalidade. |
+| **RF-11** | Pull-to-Refresh, Busca e Filtros | Alta | Puxar para atualizar, buscar por texto, filtrar por tipo/finalidade/cidade e faixa de preço. |
+| **RF-12** | Tela de Detalhes | Alta | Foto ampliada + todos os atributos formatados (preço em R$, área em m², datas em DD/MM/YYYY). |
+| **RF-13** | Formulário de Cadastro e Edição | Alta | Formulário com pickers para `tipo`/`finalidade`, campos numéricos e máscaras de preço/telefone/data. |
+| **RF-14** | Seleção de Foto (Câmera e Galeria) | Alta | Integração com `expo-image-picker` para foto da fachada. |
+| **RF-15** | Confirmação de Exclusão | Média | `Alert.alert` antes de deletar o anúncio. |
 
 ---
 
@@ -73,31 +81,32 @@ Para garantir conformidade acima do mínimo solicitado, o cadastro de Usuário p
 
 | ID | Requisito | Categoria | Descrição |
 | :--- | :--- | :--- | :--- |
-| **RNF-01** | Padrão Arquitetural RESTful | Arquitetura | A API deve seguir rigorosamente as convenções REST, utilizando verbos HTTP corretos (`GET`, `POST`, `PUT`, `DELETE`) e respostas em JSON. |
-| **RNF-02** | Desempenho e Tempo de Resposta | Performance | Os endpoints de leitura e escrita devem responder em menos de 300ms em condições normais de rede local. |
-| **RNF-03** | Armazenamento de Arquivos | Armazenamento | As fotos devem ser salvas no disco público do Laravel (`storage/app/public/usuarios`), expostas via link simbólico `storage/`. |
-| **RNF-04** | Tipagem Estrita e Segurança | Confiabilidade | O código mobile deve ser 100% tipado com TypeScript, e o backend deve utilizar Form Requests tipados sem injeção de SQL. |
-| **RNF-05** | Responsividade e Usabilidade | UI / UX | O app deve se adaptar fluidamente a diferentes tamanhos de tela (smartphones comuns e tablets) em Android e iOS. |
-| **RNF-06** | Tratamento de Erros Padronizado | Usabilidade | Erros de validação (HTTP 422) e falhas de conexão devem ser tratados com mensagens claras e legíveis em português. |
-| **RNF-07** | Configuração de CORS | Segurança / Rede | A API Laravel deve permitir requisições de origens cruzadas (CORS) para permitir testes locais no emulador e no smartphone via Wi-Fi. |
+| **RNF-01** | Padrão Arquitetural RESTful | Arquitetura | Verbos HTTP corretos (`GET`, `POST`, `PUT`, `DELETE`) e JSON. |
+| **RNF-02** | Desempenho | Performance | Resposta < 300ms em rede local. |
+| **RNF-03** | Armazenamento de Arquivos | Armazenamento | Fotos em `storage/app/public/imoveis`, expostas via `storage/`. |
+| **RNF-04** | Tipagem e Segurança | Confiabilidade | Mobile 100% TypeScript, backend com Form Requests, sem SQL injection. |
+| **RNF-05** | Responsividade | UI/UX | Adaptação a smartphones e tablets Android/iOS. |
+| **RNF-06** | Tratamento de Erros | Usabilidade | Erros 422 e falhas de conexão com mensagens claras em português. |
+| **RNF-07** | CORS | Segurança/Rede | Permitir requisições do emulador e smartphone via Wi-Fi. |
 
 ---
 
 ## 📜 Regras de Negócio (RN)
 
-- **RN-01 (Unicidade Cadastral):** O `email` e o `cpf` devem ser estritamente únicos na tabela de usuários.
-- **RN-02 (Validação de Foto):** Arquivos de foto devem ser do tipo imagem (`jpg`, `jpeg`, `png`, `webp`) com tamanho máximo de 2 MB (2048 KB).
-- **RN-03 (Consistência Etária):** A `data_nascimento` deve ser uma data no passado. A `idade` informada deve ser compatível com o ano de nascimento (diferença máxima de 1 ano em relação à data atual).
-- **RN-04 (Higienização de Formatação):** A API deve aceitar CPFs e telefones com ou sem pontuação, persistindo de forma padronizada ou normalizando strings.
-- **RN-05 (Limpeza de Mídia Órfã):** Ao atualizar a foto de um usuário ou ao deletar seu registro, o arquivo físico antigo presente no servidor deve ser removido do disco.
-- **RN-06 (Fallback de Foto no Mobile):** Caso o usuário não possua foto cadastrada (`foto = null`), o aplicativo deve exibir um avatar padrão com as iniciais do nome.
+- **RN-01 (Valores):** `preco >= 0`, `area_m2 > 0`, `quartos/banheiros/vagas >= 0`.
+- **RN-02 (Disponibilidade):** `data_disponibilidade` deve ser `>= hoje`. Não faz sentido anunciar imóvel com data passada.
+- **RN-03 (Coerência do tipo):** Se `tipo = terreno`, `quartos` e `banheiros` devem ser `0`.
+- **RN-04 (Domínio fechado):** `tipo` e `finalidade` só aceitam os valores do enum. Qualquer outro valor → 422.
+- **RN-05 (Limpeza de Mídia Órfã):** Ao atualizar a foto ou deletar o imóvel, remover o arquivo físico antigo do disco.
+- **RN-06 (Fallback de Foto no Mobile):** Se `foto = null`, exibir placeholder com ícone de casa.
+- **RN-07 (Formatação):** `preco` exibido como `R$ 2.500,00/mês` (aluguel) ou `R$ 350.000,00` (venda). Telefone no padrão BR. Data em `DD/MM/YYYY`.
+- **RN-08 (Validação de Foto):** Apenas `jpg`, `jpeg`, `png`, `webp` até 2 MB (2048 KB).
 
 ---
 
 ## 🚫 Fora de Escopo da Entrega 1
 
-As seguintes funcionalidades não fazem parte dos requisitos obrigatórios da Entrega 1 e poderão ser implementadas em entregas futuras do TP:
-- Autenticação e autorização por tokens JWT / Laravel Sanctum;
-- Recuperação de senha por e-mail com servidor SMTP externo;
-- Multi-tenancy e controle refinado de permissões por papéis (RBAC);
-- Sincronização offline-first com banco local (WatermelonDB / SQLite local no mobile).
+- Agendamento de visitas (`visitas`: `imovel_id`, `nome_visitante`, `data_visita`) — **plus para Entrega 2+**;
+- Autenticação JWT / Sanctum e perfis de corretor;
+- Galeria multi-foto por imóvel (na Entrega 1, 1 foto de capa por imóvel);
+- Mapa/geolocalização, chat, favoritos e sincronização offline-first.
