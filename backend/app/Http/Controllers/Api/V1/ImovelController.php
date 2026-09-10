@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreImovelRequest;
+use App\Http\Requests\UpdateFotoImovelRequest;
 use App\Http\Requests\UpdateImovelRequest;
 use App\Http\Resources\ImovelResource;
 use App\Models\Imovel;
@@ -93,6 +94,22 @@ class ImovelController extends Controller
         return (new ImovelResource($imovel->refresh()))
             ->additional(['message' => 'Imóvel atualizado com sucesso!'])
             ->response();
+    }
+
+    public function updateFoto(UpdateFotoImovelRequest $request, Imovel $imovel): JsonResponse
+    {
+        if ($imovel->foto && Storage::disk('public')->exists($imovel->foto)) {
+            Storage::disk('public')->delete($imovel->foto);
+        }
+
+        $caminho = Storage::disk('public')->putFile('imoveis', $request->file('foto'));
+
+        $imovel->update(['foto' => $caminho]);
+
+        return response()->json([
+            'message' => 'Foto do imóvel atualizada com sucesso!',
+            'foto_url' => $imovel->refresh()->foto_url,
+        ]);
     }
 
     public function destroy(Imovel $imovel): Response
