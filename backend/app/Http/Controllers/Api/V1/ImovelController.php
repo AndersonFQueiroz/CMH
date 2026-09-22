@@ -6,18 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreImovelRequest;
 use App\Http\Requests\UpdateFotoImovelRequest;
 use App\Http\Requests\UpdateImovelRequest;
+use App\Http\Resources\ImovelCollection;
 use App\Http\Resources\ImovelResource;
 use App\Models\Imovel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 
 class ImovelController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): ImovelCollection
     {
         $busca = $request->string('busca')->trim()->toString();
         $cidade = $request->string('cidade')->trim()->toString();
@@ -52,7 +52,7 @@ class ImovelController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        return ImovelResource::collection($imoveis);
+        return new ImovelCollection($imoveis);
     }
 
     public function store(StoreImovelRequest $request): JsonResponse
