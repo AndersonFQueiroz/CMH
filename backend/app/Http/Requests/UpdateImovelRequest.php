@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateImovelRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class UpdateImovelRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -39,6 +41,24 @@ class UpdateImovelRequest extends FormRequest
             'disponivel' => ['sometimes', 'boolean'],
             'contato_telefone' => ['sometimes', 'required', 'string', 'max:20'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $imovel = $this->route('imovel');
+            $tipo = $this->input('tipo', $imovel?->tipo);
+
+            if ($tipo !== 'terreno') {
+                return;
+            }
+
+            foreach (['quartos', 'banheiros'] as $campo) {
+                if ((int) $this->input($campo, $imovel?->{$campo} ?? 0) !== 0) {
+                    $validator->errors()->add($campo, "Um terreno não pode ter {$campo}.");
+                }
+            }
+        });
     }
 
     /**
@@ -156,4 +176,3 @@ class UpdateImovelRequest extends FormRequest
         ];
     }
 }
-

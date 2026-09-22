@@ -88,6 +88,8 @@ Prefixo `/api/v1`, JSON padronizado:
 
 Para schemas e payloads completos, consulte [`specs.md`](./specs.md).
 
+A [documentação de testes e demonstração](docs/api/README.md) inclui a collection Postman, a especificação OpenAPI para Swagger/Insomnia e instruções para executar os testes de validação.
+
 ---
 
 ## 💻 Como Executar o Projeto
