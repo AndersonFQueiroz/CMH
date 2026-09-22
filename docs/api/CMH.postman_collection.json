@@ -1,0 +1,911 @@
+{
+  "info": {
+    "name": "CMH — Imóveis (API v1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "CRUD, filtros, fotos e erro 422. Execute na ordem para criar um anúncio de teste e removê-lo ao final. Configure o diretório de trabalho para a raiz do repositório. Consulte docs/api/README.md."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1"
+    },
+    {
+      "key": "imovel_id",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const tomorrow = new Date(Date.now() + 86400000);",
+          "pm.variables.set('data_disponibilidade', tomorrow.toISOString().slice(0,10));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Cadastrar imóvel com foto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "titulo",
+              "value": "Casa com quintal para alugar",
+              "type": "text"
+            },
+            {
+              "key": "descricao",
+              "value": "Anúncio de demonstração da collection CMH.",
+              "type": "text"
+            },
+            {
+              "key": "tipo",
+              "value": "casa",
+              "type": "text"
+            },
+            {
+              "key": "finalidade",
+              "value": "aluguel",
+              "type": "text"
+            },
+            {
+              "key": "endereco",
+              "value": "Rua das Palmeiras, 123 - Centro",
+              "type": "text"
+            },
+            {
+              "key": "cidade",
+              "value": "Santos/SP",
+              "type": "text"
+            },
+            {
+              "key": "preco",
+              "value": "2500.75",
+              "type": "text"
+            },
+            {
+              "key": "area_m2",
+              "value": "120.5",
+              "type": "text"
+            },
+            {
+              "key": "quartos",
+              "value": "2",
+              "type": "text"
+            },
+            {
+              "key": "banheiros",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "vagas",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "data_disponibilidade",
+              "value": "{{data_disponibilidade}}",
+              "type": "text"
+            },
+            {
+              "key": "disponivel",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "contato_telefone",
+              "value": "(13) 99999-1234",
+              "type": "text"
+            },
+            {
+              "key": "foto",
+              "type": "file",
+              "src": "docs/api/fixtures/fachada.png",
+              "description": "PNG de teste incluído no repositório; pode selecionar sua própria imagem até 2 MB."
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('imovel_id', pm.response.json().data.id);",
+              "pm.test('Foto pública presente', () => pm.expect(pm.response.json().data.foto_url).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 201",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "titulo",
+                  "value": "Casa com quintal para alugar",
+                  "type": "text"
+                },
+                {
+                  "key": "descricao",
+                  "value": "Anúncio de demonstração da collection CMH.",
+                  "type": "text"
+                },
+                {
+                  "key": "tipo",
+                  "value": "casa",
+                  "type": "text"
+                },
+                {
+                  "key": "finalidade",
+                  "value": "aluguel",
+                  "type": "text"
+                },
+                {
+                  "key": "endereco",
+                  "value": "Rua das Palmeiras, 123 - Centro",
+                  "type": "text"
+                },
+                {
+                  "key": "cidade",
+                  "value": "Santos/SP",
+                  "type": "text"
+                },
+                {
+                  "key": "preco",
+                  "value": "2500.75",
+                  "type": "text"
+                },
+                {
+                  "key": "area_m2",
+                  "value": "120.5",
+                  "type": "text"
+                },
+                {
+                  "key": "quartos",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "banheiros",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "vagas",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "data_disponibilidade",
+                  "value": "{{data_disponibilidade}}",
+                  "type": "text"
+                },
+                {
+                  "key": "disponivel",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "contato_telefone",
+                  "value": "(13) 99999-1234",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": "docs/api/fixtures/fachada.png",
+                  "description": "PNG de teste incluído no repositório; pode selecionar sua própria imagem até 2 MB."
+                }
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Imóvel cadastrado com sucesso!\",\n  \"data\": {\n    \"titulo\": \"Casa com quintal para alugar\",\n    \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n    \"tipo\": \"casa\",\n    \"finalidade\": \"aluguel\",\n    \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n    \"cidade\": \"Santos/SP\",\n    \"preco\": 2500.75,\n    \"area_m2\": 120.5,\n    \"quartos\": 2,\n    \"banheiros\": 1,\n    \"vagas\": 1,\n    \"data_disponibilidade\": \"2026-10-15\",\n    \"disponivel\": true,\n    \"contato_telefone\": \"(13) 99999-1234\",\n    \"id\": 1,\n    \"foto_url\": \"http://localhost:8000/storage/imoveis/fachada.png\",\n    \"created_at\": \"2026-10-15T15:00:00.000000Z\",\n    \"updated_at\": \"2026-10-15T15:00:00.000000Z\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "02 — Listar com filtros e paginação",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis?tipo=casa&finalidade=aluguel&preco_min=2000&preco_max=3000&cidade=Santos&busca=quintal&disponivel=true&page=1&per_page=15",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis"
+          ],
+          "query": [
+            {
+              "key": "tipo",
+              "value": "casa"
+            },
+            {
+              "key": "finalidade",
+              "value": "aluguel"
+            },
+            {
+              "key": "preco_min",
+              "value": "2000"
+            },
+            {
+              "key": "preco_max",
+              "value": "3000"
+            },
+            {
+              "key": "cidade",
+              "value": "Santos"
+            },
+            {
+              "key": "busca",
+              "value": "quintal"
+            },
+            {
+              "key": "disponivel",
+              "value": "true"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "per_page",
+              "value": "15"
+            }
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Paginação e filtros', () => { const r = pm.response.json(); pm.expect(r).to.have.all.keys('data','links','meta'); pm.expect(r.data.some(i => i.id === Number(pm.collectionVariables.get('imovel_id')))).to.eql(true); r.data.forEach(i => { pm.expect(i.tipo).to.eql('casa'); pm.expect(i.finalidade).to.eql('aluguel'); pm.expect(i.preco).to.be.within(2000,3000); }); });"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 200",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis?tipo=casa&finalidade=aluguel&preco_min=2000&preco_max=3000&cidade=Santos&busca=quintal&disponivel=true&page=1&per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "casa"
+                },
+                {
+                  "key": "finalidade",
+                  "value": "aluguel"
+                },
+                {
+                  "key": "preco_min",
+                  "value": "2000"
+                },
+                {
+                  "key": "preco_max",
+                  "value": "3000"
+                },
+                {
+                  "key": "cidade",
+                  "value": "Santos"
+                },
+                {
+                  "key": "busca",
+                  "value": "quintal"
+                },
+                {
+                  "key": "disponivel",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": [\n    {\n      \"titulo\": \"Casa com quintal para alugar\",\n      \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n      \"tipo\": \"casa\",\n      \"finalidade\": \"aluguel\",\n      \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n      \"cidade\": \"Santos/SP\",\n      \"preco\": 2500.75,\n      \"area_m2\": 120.5,\n      \"quartos\": 2,\n      \"banheiros\": 1,\n      \"vagas\": 1,\n      \"data_disponibilidade\": \"2026-10-15\",\n      \"disponivel\": true,\n      \"contato_telefone\": \"(13) 99999-1234\",\n      \"id\": 1,\n      \"foto_url\": \"http://localhost:8000/storage/imoveis/fachada.png\",\n      \"created_at\": \"2026-10-15T15:00:00.000000Z\",\n      \"updated_at\": \"2026-10-15T15:00:00.000000Z\"\n    }\n  ],\n  \"links\": {\n    \"first\": \"http://localhost:8000/api/v1/imoveis?page=1\",\n    \"last\": \"http://localhost:8000/api/v1/imoveis?page=1\",\n    \"prev\": null,\n    \"next\": null\n  },\n  \"meta\": {\n    \"current_page\": 1,\n    \"from\": 1,\n    \"last_page\": 1,\n    \"per_page\": 15,\n    \"to\": 1,\n    \"total\": 1\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "03 — Detalhar imóvel",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis",
+            "{{imovel_id}}"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tipos do contrato', () => { const i = pm.response.json().data; pm.expect(i.preco).to.be.a('number'); pm.expect(i.area_m2).to.be.a('number'); pm.expect(i.data_disponibilidade).to.match(/^\\d{4}-\\d{2}-\\d{2}$/); });"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 200",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis",
+                "{{imovel_id}}"
+              ]
+            },
+            "description": ""
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": {\n    \"titulo\": \"Casa com quintal para alugar\",\n    \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n    \"tipo\": \"casa\",\n    \"finalidade\": \"aluguel\",\n    \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n    \"cidade\": \"Santos/SP\",\n    \"preco\": 2500.75,\n    \"area_m2\": 120.5,\n    \"quartos\": 2,\n    \"banheiros\": 1,\n    \"vagas\": 1,\n    \"data_disponibilidade\": \"2026-10-15\",\n    \"disponivel\": true,\n    \"contato_telefone\": \"(13) 99999-1234\",\n    \"id\": 1,\n    \"foto_url\": \"http://localhost:8000/storage/imoveis/fachada.png\",\n    \"created_at\": \"2026-10-15T15:00:00.000000Z\",\n    \"updated_at\": \"2026-10-15T15:00:00.000000Z\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "04 — Atualizar JSON",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis",
+            "{{imovel_id}}"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"preco\": 2700\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Preço atualizado', () => pm.expect(pm.response.json().data.preco).to.eql(2700));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 200",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis",
+                "{{imovel_id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preco\": 2700\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Imóvel atualizado com sucesso!\",\n  \"data\": {\n    \"titulo\": \"Casa com quintal para alugar\",\n    \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n    \"tipo\": \"casa\",\n    \"finalidade\": \"aluguel\",\n    \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n    \"cidade\": \"Santos/SP\",\n    \"preco\": 2700,\n    \"area_m2\": 120.5,\n    \"quartos\": 2,\n    \"banheiros\": 1,\n    \"vagas\": 1,\n    \"data_disponibilidade\": \"2026-10-15\",\n    \"disponivel\": true,\n    \"contato_telefone\": \"(13) 99999-1234\",\n    \"id\": 1,\n    \"foto_url\": \"http://localhost:8000/storage/imoveis/fachada.png\",\n    \"created_at\": \"2026-10-15T15:00:00.000000Z\",\n    \"updated_at\": \"2026-10-15T15:00:00.000000Z\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "05 — Atualizar multipart com _method=PUT",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis",
+            "{{imovel_id}}"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "_method",
+              "value": "PUT",
+              "type": "text"
+            },
+            {
+              "key": "titulo",
+              "value": "Casa com quintal e nova fachada",
+              "type": "text"
+            },
+            {
+              "key": "preco",
+              "value": "2800",
+              "type": "text"
+            },
+            {
+              "key": "foto",
+              "type": "file",
+              "src": "docs/api/fixtures/fachada.png",
+              "description": "PNG de teste incluído no repositório; pode selecionar sua própria imagem até 2 MB."
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Título atualizado', () => pm.expect(pm.response.json().data.titulo).to.eql('Casa com quintal e nova fachada'));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 200",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis",
+                "{{imovel_id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "titulo",
+                  "value": "Casa com quintal e nova fachada",
+                  "type": "text"
+                },
+                {
+                  "key": "preco",
+                  "value": "2800",
+                  "type": "text"
+                },
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": "docs/api/fixtures/fachada.png",
+                  "description": "PNG de teste incluído no repositório; pode selecionar sua própria imagem até 2 MB."
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Imóvel atualizado com sucesso!\",\n  \"data\": {\n    \"titulo\": \"Casa com quintal e nova fachada\",\n    \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n    \"tipo\": \"casa\",\n    \"finalidade\": \"aluguel\",\n    \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n    \"cidade\": \"Santos/SP\",\n    \"preco\": 2800,\n    \"area_m2\": 120.5,\n    \"quartos\": 2,\n    \"banheiros\": 1,\n    \"vagas\": 1,\n    \"data_disponibilidade\": \"2026-10-15\",\n    \"disponivel\": true,\n    \"contato_telefone\": \"(13) 99999-1234\",\n    \"id\": 1,\n    \"foto_url\": \"http://localhost:8000/storage/imoveis/fachada.png\",\n    \"created_at\": \"2026-10-15T15:00:00.000000Z\",\n    \"updated_at\": \"2026-10-15T15:00:00.000000Z\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "06 — Trocar somente foto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis/{{imovel_id}}/foto",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis",
+            "{{imovel_id}}",
+            "foto"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "foto",
+              "type": "file",
+              "src": "docs/api/fixtures/fachada.png",
+              "description": "PNG de teste incluído no repositório; pode selecionar sua própria imagem até 2 MB."
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('URL da foto', () => pm.expect(pm.response.json().foto_url).to.match(/^https?:\\/\\//));"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 200",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis/{{imovel_id}}/foto",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis",
+                "{{imovel_id}}",
+                "foto"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": "docs/api/fixtures/fachada.png",
+                  "description": "PNG de teste incluído no repositório; pode selecionar sua própria imagem até 2 MB."
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Foto do imóvel atualizada com sucesso!\",\n  \"foto_url\": \"http://localhost:8000/storage/imoveis/fachada.png\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "07 — Exemplo de validação 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Casa com quintal para alugar\",\n  \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n  \"tipo\": \"mansao\",\n  \"finalidade\": \"aluguel\",\n  \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n  \"cidade\": \"Santos/SP\",\n  \"preco\": -1,\n  \"area_m2\": 120.5,\n  \"quartos\": 2,\n  \"banheiros\": 1,\n  \"vagas\": 1,\n  \"data_disponibilidade\": \"{{data_disponibilidade}}\",\n  \"disponivel\": true,\n  \"contato_telefone\": \"(13) 99999-1234\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+              "pm.test('Erros em português', () => { const r = pm.response.json(); pm.expect(r.message).to.eql('Os dados fornecidos são inválidos.'); pm.expect(r.errors.preco).to.include('O preço deve ser maior ou igual a 0.'); pm.expect(r.errors.tipo).to.include('O tipo selecionado é inválido.'); });"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Exemplo 422",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/imoveis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "imoveis"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Casa com quintal para alugar\",\n  \"descricao\": \"Anúncio de demonstração da collection CMH.\",\n  \"tipo\": \"mansao\",\n  \"finalidade\": \"aluguel\",\n  \"endereco\": \"Rua das Palmeiras, 123 - Centro\",\n  \"cidade\": \"Santos/SP\",\n  \"preco\": -1,\n  \"area_m2\": 120.5,\n  \"quartos\": 2,\n  \"banheiros\": 1,\n  \"vagas\": 1,\n  \"data_disponibilidade\": \"{{data_disponibilidade}}\",\n  \"disponivel\": true,\n  \"contato_telefone\": \"(13) 99999-1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"message\": \"Os dados fornecidos são inválidos.\",\n  \"errors\": {\n    \"preco\": [\n      \"O preço deve ser maior ou igual a 0.\"\n    ],\n    \"tipo\": [\n      \"O tipo selecionado é inválido.\"\n    ]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "08 — Excluir imóvel criado pela collection",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/imoveis/{{imovel_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "imoveis",
+            "{{imovel_id}}"
+          ]
+        },
+        "description": "Remove apenas o anúncio cujo ID foi capturado na primeira requisição. Execute a collection na ordem."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+              "pm.test('Corpo vazio', () => pm.expect(pm.response.text()).to.eql(''));",
+              "if (pm.response.code === 204) pm.collectionVariables.unset('imovel_id');"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
