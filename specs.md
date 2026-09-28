@@ -408,7 +408,7 @@ export async function cadastrarImovel(dados: CreateImovelDTO): Promise<Imovel> {
       uri: dados.foto.uri,
       name: dados.foto.name || 'fachada.jpg',
       type: dados.foto.type || 'image/jpeg',
-    } as any);
+    } as unknown as Blob); // React Native aceita arquivo por URI.
   }
 
   const response = await api.post('/imoveis', formData, {
@@ -420,6 +420,15 @@ export async function cadastrarImovel(dados: CreateImovelDTO): Promise<Imovel> {
 ```
 
 ---
+
+### 5.3. Cliente HTTP e service implementados (#17)
+
+- `mobile/src/services/api.ts`: instância Axios com `EXPO_PUBLIC_API_URL`, timeout de 15 segundos e `Accept: application/json`. Sem URL configurada, o interceptor interrompe a requisição com uma mensagem em português.
+- `mobile/src/services/imovelService.ts`: `list`, `getById`, `create`, `update`, `delete` e `updateFoto`, seguindo as rotas da seção 3. Criação/edição sem foto usam JSON; com foto usam multipart, com `POST` e `_method=PUT` na edição.
+- `UpdateImovelDTO` permite atualização parcial (`Partial<CreateImovelDTO>`). `ImovelFiltros` também aceita `page` e `per_page`. `PaginatedResponse` inclui `links`, `meta.from` e `meta.to` conforme a resposta da seção 3.1.
+- Os interceptors traduzem falhas de conexão, timeout e HTTP para mensagens em português, preservando o erro Axios, o status e os erros por campo em `response.data.errors`. Cancelamentos continuam identificáveis por `axios.isCancel`.
+- `updateFoto` retorna `{ message, foto_url }`, sem envelope `data`, conforme a seção 3.6. `delete` retorna `void` após HTTP 204.
+- Verificações locais: `npm run typecheck` e `npm test` dentro de `mobile/`. Os testes de transporte usam adapter simulado; o envio real do arquivo exige dispositivo/emulador e backend disponíveis.
 
 ## 6. Configuração de Rede e Testes Locais
 
