@@ -1,74 +1,82 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useLayoutEffect } from 'react';
-import { Button, FlatList, StyleSheet } from 'react-native';
-
+import { useCallback, useLayoutEffect } from 'react';
+import { ActivityIndicator, Button, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import type { ListRenderItemInfo } from 'react-native';
 import { ImovelCard } from '../components/imovel/ImovelCard';
+import { useImoveis } from '../hooks/useImoveis';
 import type { RootStackParamList } from '../navigation/types';
 import type { Imovel } from '../types/imovel';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ImovelList'>;
-
-// RASCUNHO (#16, navegação apenas): mock local com tipo próprio para
-// validar o fluxo lista → detalhe → edição sem backend e sem invadir
-// a #17 (tipos canônicos) nem as telas reais (#19/#21). Será substituído.
-type MockImovelResumo = Pick<
-  Imovel,
-  'id' | 'titulo' | 'cidade' | 'preco' | 'tipo' | 'finalidade' | 'disponivel' | 'foto_url'
->;
-
-const MOCK_IMOVEIS: MockImovelResumo[] = [
-  {
-    id: 1,
-    titulo: 'Casa 3 quartos c/ quintal',
-    cidade: 'Praia Grande/SP',
-    preco: 2500,
-    tipo: 'casa',
-    finalidade: 'aluguel',
-    disponivel: true,
-    foto_url: null,
-  },
-  {
-    id: 2,
-    titulo: 'Apartamento 2 quartos mobiliado',
-    cidade: 'São Vicente/SP',
-    preco: 350000,
-    tipo: 'apartamento',
-    finalidade: 'venda',
-    disponivel: false,
-    foto_url: null,
-  },
-];
+const keyExtractor = (item: Imovel): string => String(item.id);
 
 export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
+  const { imoveis, carregamento, erro, temMais, atualizar, carregarMais } = useImoveis();
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <Button title="Novo" onPress={() => navigation.navigate('ImovelForm', {})} />
-      ),
+      headerRight: () => <Button title="Novo" onPress={() => navigation.navigate('ImovelForm', {})} />,
     });
   }, [navigation]);
-
-  const renderItem = ({ item }: { item: MockImovelResumo }): React.JSX.Element => (
-    <ImovelCard
-      imovel={item}
-      onPress={() => navigation.navigate('ImovelDetail', { id: item.id })}
-    />
-  );
+  const abrirDetalhe = useCallback((id: number) => {
+    navigation.navigate('ImovelDetail', { id });
+  }, [navigation]);
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<Imovel>) => (
+    <ImovelCard imovel={item} onPress={() => abrirDetalhe(item.id)} />
+  ), [abrirDetalhe]);
 
   return (
     <FlatList
-      contentContainerStyle={styles.list}
-      data={MOCK_IMOVEIS}
-      keyExtractor={(item) => String(item.id)}
+      style={styles.container}
+      contentContainerStyle={[styles.lista, imoveis.length === 0 && styles.listaVazia]}
+      data={imoveis}
+      keyExtractor={keyExtractor}
       renderItem={renderItem}
+      initialNumToRender={5}
+      maxToRenderPerBatch={5}
+      windowSize={7}
+      alwaysBounceVertical
+      refreshControl={<RefreshControl refreshing={carregamento === 'atualizacao'} onRefresh={atualizar} />}
+      ListHeaderComponent={erro ? (
+        <View style={styles.mensagem} accessibilityLiveRegion="polite">
+          <Text style={styles.erro}>{erro}</Text>
+          <Button title="Tentar novamente" onPress={atualizar} disabled={carregamento !== null} />
+        </View>
+      ) : null}
+      ListEmptyComponent={
+        <View style={styles.vazio}>
+          {carregamento ? (
+            <>
+              <ActivityIndicator size="large" accessibilityLabel="Carregando imóveis" />
+              <Text style={styles.texto}>Carregando imóveis…</Text>
+            </>
+          ) : !erro ? (
+            <>
+              <Text style={styles.titulo}>Nenhum imóvel cadastrado</Text>
+              <Text style={styles.texto}>Os anúncios aparecerão aqui. Toque em Novo para cadastrar um imóvel.</Text>
+            </>
+          ) : null}
+        </View>
+      }
+      ListFooterComponent={imoveis.length > 0 && temMais ? (
+        <View style={styles.mensagem}>
+          {carregamento === 'pagina'
+            ? <ActivityIndicator accessibilityLabel="Carregando mais imóveis" />
+            : <Button title="Carregar mais imóveis" onPress={carregarMais} disabled={carregamento !== null} />}
+        </View>
+      ) : null}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  list: {
-    padding: 16,
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  lista: { padding: 16 },
+  listaVazia: { flexGrow: 1 },
+  vazio: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
+  mensagem: { gap: 12, paddingVertical: 16 },
+  titulo: { fontSize: 20, fontWeight: '600', textAlign: 'center', color: '#172b3a' },
+  texto: { textAlign: 'center', color: '#526576' },
+  erro: { color: '#a32424', textAlign: 'center' },
 });
 
 export default ImovelListScreen;

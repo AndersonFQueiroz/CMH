@@ -1,12 +1,12 @@
 # CMH Mobile — Setup, navegação e integração HTTP
 
-> A navegação ainda usa mocks locais. A camada HTTP e os tipos de domínio
-> estão implementados na issue #17 e prontos para integração nas telas.
+> A listagem consome a API real (#19), com fotos, badges, paginação e atualização
+> ao puxar. Detalhes e formulário ainda usam os rascunhos locais de navegação.
 >
 > | Fica para | Issue |
 > | --- | --- |
 > | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 (implementado) |
-> | Lista real, busca/filtros, detalhes | #19, #20, #21 |
+> | Busca/filtros e detalhes reais | #20, #21 |
 > | Formulário real, foto, multipart, erros | #22, #23, #24, #25 |
 
 ## Pré-requisitos
@@ -35,10 +35,13 @@ npx expo start
 
 Escaneie o QR com Expo Go (Android) ou Câmera (iOS).
 
+Para visualizar a listagem no navegador, use `npm run web`. O gesto nativo de
+pull-to-refresh deve ser validado em Android/iOS.
+
 ## Teste manual #16
 
-1. `ImovelList` mostra 2 mocks + botão `Novo` no header.
-2. `Ver detalhe` → `ImovelDetail` com header = título do anúncio.
+1. `ImovelList` mostra anúncios da API + botão `Novo` no header (integração #19).
+2. `Ver detalhes` → `ImovelDetail` recebe o ID real, mas ainda exibe dados de rascunho (#21).
 3. `Editar` → `ImovelForm` em modo edição (`#id` no título).
 4. `Novo` → `ImovelForm` em modo criação.
 5. Salvar com título < 5 chars → Alert de validação.
@@ -48,8 +51,21 @@ Escaneie o QR com Expo Go (Android) ou Câmera (iOS).
 `src/{components,hooks,navigation,screens,services,types,utils}` + `src/@types` + `tsconfig` estrito, sem `any`.
 
 Os componentes de base ficam em `src/components/common` e o card/avatar de imóvel em
-`src/components/imovel`. A listagem de demonstração já reutiliza `ImovelCard`; o
-avatar mostra um ícone de casa quando não há foto ou quando a imagem falha ao carregar.
+`src/components/imovel`. A listagem reutiliza `ImovelCard`; o avatar mostra um
+ícone de casa quando não há foto ou quando a imagem falha ao carregar.
+
+## Validar a listagem (#19)
+
+Com a API iniciada e `EXPO_PUBLIC_API_URL` configurada:
+
+1. Abra a lista: confira os anúncios reais, foto/placeholder, título, preço, cidade e badges.
+2. Com mais de 15 anúncios, toque em **Carregar mais imóveis** e confira a próxima página.
+3. No Android/iOS, puxe a lista para baixo: o indicador deve aparecer e a primeira página substituir a listagem.
+4. Em um banco de testes sem anúncios, confira **Nenhum imóvel cadastrado** e a possibilidade de puxar para atualizar.
+5. Interrompa a API e atualize: confira a mensagem de erro, os anúncios anteriores preservados e **Tentar novamente** após religar a API.
+6. Confira o placeholder para foto ausente ou URL inválida e a navegação pelo ID ao tocar no card.
+
+O gesto de atualização deve ser verificado no dispositivo/emulador. Detalhes e formulário ainda são rascunhos; busca/filtros ficam para #20.
 
 ## Cliente HTTP e service (#17)
 
@@ -89,5 +105,7 @@ npm test
 
 Os testes usam um adapter Axios sem acesso à rede e um substituto do FormData
 nativo para verificar rotas, JSON, multipart, paginação e tratamento de erros.
+Os testes de `useImoveis` simulam o service e verificam refresh, estado vazio,
+paginação, falhas e respostas atrasadas usando `react-test-renderer`.
 O upload real pela câmera/galeria deve ser validado em Android/iOS quando as
 telas correspondentes forem integradas.
