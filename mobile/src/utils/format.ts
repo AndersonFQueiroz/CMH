@@ -22,7 +22,7 @@ export function formatArea(areaM2: number): string {
 }
 
 export function formatDataBR(isoDate: string): string {
-  const [year, month, day] = isoDate.split('-');
+  const [year, month, day] = isoDate.split('T')[0].split('-');
   if (!year || !month || !day) return isoDate;
   return `${day}/${month}/${year}`;
 }

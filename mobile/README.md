@@ -1,12 +1,13 @@
 # CMH Mobile — Setup, navegação e integração HTTP
 
-> A navegação ainda usa mocks locais. A camada HTTP e os tipos de domínio
-> estão implementados na issue #17 e prontos para integração nas telas.
+> A listagem, os filtros e os detalhes já consomem a API. A camada HTTP e os
+> tipos de domínio foram implementados na issue #17; o formulário continua no
+> escopo das issues #22–#25.
 >
 > | Fica para | Issue |
 > | --- | --- |
 > | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 (implementado) |
-> | Lista real, busca/filtros, detalhes | #19, #20, #21 |
+> | Lista real, busca/filtros, detalhes | #19, #20, #21 (implementado) |
 > | Formulário real, foto, multipart, erros | #22, #23, #24, #25 |
 
 ## Pré-requisitos
