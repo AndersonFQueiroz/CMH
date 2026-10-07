@@ -5,7 +5,7 @@
 >
 > | Fica para | Issue |
 > | --- | --- |
-> | `ImovelCard`, avatar, badges, loaders | #18 |
+> | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 (implementado) |
 > | Lista real, busca/filtros, detalhes | #19, #20, #21 |
 > | Formulário real, foto, multipart, erros | #22, #23, #24, #25 |
 
@@ -46,6 +46,10 @@ Escaneie o QR com Expo Go (Android) ou Câmera (iOS).
 ## Estrutura (#15)
 
 `src/{components,hooks,navigation,screens,services,types,utils}` + `src/@types` + `tsconfig` estrito, sem `any`.
+
+Os componentes de base ficam em `src/components/common` e o card/avatar de imóvel em
+`src/components/imovel`. A listagem de demonstração já reutiliza `ImovelCard`; o
+avatar mostra um ícone de casa quando não há foto ou quando a imagem falha ao carregar.
 
 ## Cliente HTTP e service (#17)
 
