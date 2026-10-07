@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   FlatList,
@@ -71,6 +71,141 @@ function errorMessage(error: unknown): string {
     ? error.message
     : 'Não foi possível carregar os imóveis. Tente novamente.';
 }
+
+interface FiltrosHeaderProps {
+  textoBusca: string;
+  onChangeTextoBusca: (value: string) => void;
+  cidade: string;
+  onChangeCidade: (value: string) => void;
+  tipo: TipoImovel | undefined;
+  onChangeTipo: (value: TipoImovel | undefined) => void;
+  finalidade: FinalidadeImovel | undefined;
+  onChangeFinalidade: (value: FinalidadeImovel | undefined) => void;
+  precoMinimo: string;
+  onChangePrecoMinimo: (value: string) => void;
+  precoMaximo: string;
+  onChangePrecoMaximo: (value: string) => void;
+  erro: string | null;
+  temResultados: boolean;
+}
+
+const FiltrosHeader = memo(function FiltrosHeader({
+  textoBusca,
+  onChangeTextoBusca,
+  cidade,
+  onChangeCidade,
+  tipo,
+  onChangeTipo,
+  finalidade,
+  onChangeFinalidade,
+  precoMinimo,
+  onChangePrecoMinimo,
+  precoMaximo,
+  onChangePrecoMaximo,
+  erro,
+  temResultados,
+}: FiltrosHeaderProps): React.JSX.Element {
+  return (
+    <View style={styles.filters}>
+      <BaseInput
+        autoCapitalize="none"
+        label="Buscar"
+        onChangeText={onChangeTextoBusca}
+        placeholder="Título ou endereço"
+        returnKeyType="search"
+        value={textoBusca}
+      />
+      <BaseInput
+        label="Cidade"
+        onChangeText={onChangeCidade}
+        placeholder="Ex.: Praia Grande/SP"
+        value={cidade}
+      />
+
+      <Text style={styles.filterLabel}>Tipo de imóvel</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.chips}>
+          <FilterChip label="Todos" onPress={() => onChangeTipo(undefined)} selected={!tipo} />
+          {TIPOS.map((opcao) => (
+            <FilterChip
+              key={opcao.value}
+              label={opcao.label}
+              onPress={() => onChangeTipo(tipo === opcao.value ? undefined : opcao.value)}
+              selected={tipo === opcao.value}
+            />
+          ))}
+        </View>
+      </ScrollView>
+
+      <Text style={styles.filterLabel}>Finalidade</Text>
+      <View style={styles.chips}>
+        <FilterChip
+          label="Todas"
+          onPress={() => onChangeFinalidade(undefined)}
+          selected={!finalidade}
+        />
+        {FINALIDADES.map((opcao) => (
+          <FilterChip
+            key={opcao.value}
+            label={opcao.label}
+            onPress={() =>
+              onChangeFinalidade(finalidade === opcao.value ? undefined : opcao.value)
+            }
+            selected={finalidade === opcao.value}
+          />
+        ))}
+      </View>
+
+      <Text style={styles.filterLabel}>Faixa de preço (R$)</Text>
+      <View style={styles.priceRange}>
+        <BaseInput
+          containerStyle={styles.priceInput}
+          keyboardType="decimal-pad"
+          label="Mínimo"
+          onChangeText={onChangePrecoMinimo}
+          placeholder="0"
+          value={precoMinimo}
+        />
+        <BaseInput
+          containerStyle={styles.priceInput}
+          keyboardType="decimal-pad"
+          label="Máximo"
+          onChangeText={onChangePrecoMaximo}
+          placeholder="Sem limite"
+          value={precoMaximo}
+        />
+      </View>
+      {erro && temResultados ? <Text style={styles.error}>{erro}</Text> : null}
+    </View>
+  );
+});
+
+interface ListaVaziaProps {
+  isLoading: boolean;
+  erro: string | null;
+  onRetry: () => void;
+}
+
+const ListaVazia = memo(function ListaVazia({
+  isLoading,
+  erro,
+  onRetry,
+}: ListaVaziaProps): React.JSX.Element {
+  return (
+    <View style={styles.empty}>
+      {isLoading ? (
+        <Loader message="Carregando imóveis..." />
+      ) : (
+        <>
+          <Text style={styles.emptyText}>
+            {erro ?? 'Nenhum imóvel encontrado com esses filtros.'}
+          </Text>
+          {erro ? <BaseButton onPress={onRetry} title="Tentar novamente" /> : null}
+        </>
+      )}
+    </View>
+  );
+});
 
 export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
@@ -183,110 +318,47 @@ export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
     }
   }, [filtros, paginaAtual, ultimaPagina]);
 
-  const renderItem = ({ item }: { item: Imovel }): React.JSX.Element => (
-    <ImovelCard
-      imovel={item}
-      onPress={() => navigation.navigate('ImovelDetail', { id: item.id })}
+  const renderItem = useCallback(
+    ({ item }: { item: Imovel }): React.JSX.Element => (
+      <ImovelCard
+        imovel={item}
+        onPress={() => navigation.navigate('ImovelDetail', { id: item.id })}
+      />
+    ),
+    [navigation],
+  );
+
+  const headerElement = (
+    <FiltrosHeader
+      cidade={cidade}
+      erro={erro}
+      finalidade={finalidade}
+      onChangeCidade={setCidade}
+      onChangeFinalidade={setFinalidade}
+      onChangePrecoMaximo={setPrecoMaximo}
+      onChangePrecoMinimo={setPrecoMinimo}
+      onChangeTextoBusca={setTextoBusca}
+      onChangeTipo={setTipo}
+      precoMaximo={precoMaximo}
+      precoMinimo={precoMinimo}
+      temResultados={imoveis.length > 0}
+      textoBusca={textoBusca}
+      tipo={tipo}
     />
   );
 
-  const renderFiltros = (): React.JSX.Element => (
-    <View style={styles.filters}>
-      <BaseInput
-        autoCapitalize="none"
-        label="Buscar"
-        onChangeText={setTextoBusca}
-        placeholder="Título ou endereço"
-        returnKeyType="search"
-        value={textoBusca}
-      />
-      <BaseInput
-        label="Cidade"
-        onChangeText={setCidade}
-        placeholder="Ex.: Praia Grande/SP"
-        value={cidade}
-      />
-
-      <Text style={styles.filterLabel}>Tipo de imóvel</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.chips}>
-          <FilterChip label="Todos" onPress={() => setTipo(undefined)} selected={!tipo} />
-          {TIPOS.map((opcao) => (
-            <FilterChip
-              key={opcao.value}
-              label={opcao.label}
-              onPress={() => setTipo(tipo === opcao.value ? undefined : opcao.value)}
-              selected={tipo === opcao.value}
-            />
-          ))}
-        </View>
-      </ScrollView>
-
-      <Text style={styles.filterLabel}>Finalidade</Text>
-      <View style={styles.chips}>
-        <FilterChip
-          label="Todas"
-          onPress={() => setFinalidade(undefined)}
-          selected={!finalidade}
-        />
-        {FINALIDADES.map((opcao) => (
-          <FilterChip
-            key={opcao.value}
-            label={opcao.label}
-            onPress={() => setFinalidade(finalidade === opcao.value ? undefined : opcao.value)}
-            selected={finalidade === opcao.value}
-          />
-        ))}
-      </View>
-
-      <Text style={styles.filterLabel}>Faixa de preço (R$)</Text>
-      <View style={styles.priceRange}>
-        <BaseInput
-          containerStyle={styles.priceInput}
-          keyboardType="decimal-pad"
-          label="Mínimo"
-          onChangeText={setPrecoMinimo}
-          placeholder="0"
-          value={precoMinimo}
-        />
-        <BaseInput
-          containerStyle={styles.priceInput}
-          keyboardType="decimal-pad"
-          label="Máximo"
-          onChangeText={setPrecoMaximo}
-          placeholder="Sem limite"
-          value={precoMaximo}
-        />
-      </View>
-      {erro && imoveis.length > 0 ? <Text style={styles.error}>{erro}</Text> : null}
-    </View>
-  );
-
-  const renderVazio = (): React.JSX.Element => (
-    <View style={styles.empty}>
-      {isLoading ? (
-        <Loader message="Carregando imóveis..." />
-      ) : (
-        <>
-          <Text style={styles.emptyText}>
-            {erro ?? 'Nenhum imóvel encontrado com esses filtros.'}
-          </Text>
-          {erro ? <BaseButton onPress={atualizar} title="Tentar novamente" /> : null}
-        </>
-      )}
-    </View>
-  );
+  const emptyElement = <ListaVazia erro={erro} isLoading={isLoading} onRetry={atualizar} />;
 
   return (
     <FlatList
       contentContainerStyle={styles.list}
       data={imoveis}
       keyExtractor={(item) => String(item.id)}
-      ListEmptyComponent={renderVazio}
+      ListEmptyComponent={emptyElement}
       ListFooterComponent={
         isLoadingMore ? <Loader message="Carregando mais imóveis..." size="small" /> : null
       }
-      ListHeaderComponent={renderFiltros}
+      ListHeaderComponent={headerElement}
       onEndReached={() => void carregarProximaPagina()}
       onEndReachedThreshold={0.5}
       refreshControl={<RefreshControl onRefresh={atualizar} refreshing={isRefreshing} />}
