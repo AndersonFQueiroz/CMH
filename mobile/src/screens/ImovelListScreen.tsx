@@ -1,23 +1,20 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useLayoutEffect } from 'react';
-import { Button, FlatList, StyleSheet, Text, View } from 'react-native';
+import { Button, FlatList, StyleSheet } from 'react-native';
 
+import { ImovelCard } from '../components/imovel/ImovelCard';
 import type { RootStackParamList } from '../navigation/types';
-import { formatPreco } from '../utils/format';
+import type { Imovel } from '../types/imovel';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ImovelList'>;
 
 // RASCUNHO (#16, navegação apenas): mock local com tipo próprio para
 // validar o fluxo lista → detalhe → edição sem backend e sem invadir
 // a #17 (tipos canônicos) nem as telas reais (#19/#21). Será substituído.
-interface MockImovelResumo {
-  id: number;
-  titulo: string;
-  cidade: string;
-  preco: number;
-  tipo: string;
-  finalidade: 'venda' | 'aluguel';
-}
+type MockImovelResumo = Pick<
+  Imovel,
+  'id' | 'titulo' | 'cidade' | 'preco' | 'tipo' | 'finalidade' | 'disponivel' | 'foto_url'
+>;
 
 const MOCK_IMOVEIS: MockImovelResumo[] = [
   {
@@ -27,6 +24,8 @@ const MOCK_IMOVEIS: MockImovelResumo[] = [
     preco: 2500,
     tipo: 'casa',
     finalidade: 'aluguel',
+    disponivel: true,
+    foto_url: null,
   },
   {
     id: 2,
@@ -35,6 +34,8 @@ const MOCK_IMOVEIS: MockImovelResumo[] = [
     preco: 350000,
     tipo: 'apartamento',
     finalidade: 'venda',
+    disponivel: false,
+    foto_url: null,
   },
 ];
 
@@ -48,19 +49,10 @@ export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
   }, [navigation]);
 
   const renderItem = ({ item }: { item: MockImovelResumo }): React.JSX.Element => (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.titulo}</Text>
-      <Text>
-        {formatPreco(item.preco, item.finalidade)} · {item.cidade}
-      </Text>
-      <Text style={styles.badges}>
-        {item.tipo} · {item.finalidade}
-      </Text>
-      <Button
-        title="Ver detalhe"
-        onPress={() => navigation.navigate('ImovelDetail', { id: item.id })}
-      />
-    </View>
+    <ImovelCard
+      imovel={item}
+      onPress={() => navigation.navigate('ImovelDetail', { id: item.id })}
+    />
   );
 
   return (
@@ -74,26 +66,8 @@ export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  badges: {
-    color: '#555',
-    marginBottom: 8,
-    marginTop: 2,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 4,
-    marginBottom: 12,
-    padding: 12,
-  },
   list: {
     padding: 16,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 
