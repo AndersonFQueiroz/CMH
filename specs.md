@@ -430,6 +430,14 @@ export async function cadastrarImovel(dados: CreateImovelDTO): Promise<Imovel> {
 - `updateFoto` retorna `{ message, foto_url }`, sem envelope `data`, conforme a seção 3.6. `delete` retorna `void` após HTTP 204.
 - Verificações locais: `npm run typecheck` e `npm test` dentro de `mobile/`. Os testes de transporte usam adapter simulado; o envio real do arquivo exige dispositivo/emulador e backend disponíveis.
 
+### 5.4. Listagem de imóveis (#19)
+
+- `ImovelListScreen` usa `FlatList` e `imovelService.list` com 15 anúncios por página. O botão **Carregar mais imóveis** consulta a próxima página conforme `meta`, sem duplicar IDs.
+- Os cards exibem foto (ou ícone de casa quando ausente/inacessível), título, preço formatado, cidade e badges de tipo/finalidade. O toque navega para os detalhes pelo ID real; a implementação dos detalhes pertence à issue #21.
+- `RefreshControl` recarrega a primeira página e substitui os dados anteriores. Respostas antigas não sobrescrevem uma atualização mais recente.
+- Há indicadores distintos para carregamento inicial, atualização e próxima página. Falhas exibem mensagem em português e opção de tentar novamente, preservando os anúncios já carregados. O estado vazio aparece somente após uma consulta bem-sucedida sem anúncios.
+- `mobile/tests/useImoveis.test.ts` verifica carregamento, lista vazia, refresh, paginação sem duplicatas, recuperação após erro e descarte de respostas atrasadas ou após desmontagem, usando o service simulado. O gesto nativo de pull-to-refresh requer validação em Android/iOS.
+
 ## 6. Configuração de Rede e Testes Locais
 
 1. Máquina do Laravel e smartphone na **mesma rede Wi-Fi**.
