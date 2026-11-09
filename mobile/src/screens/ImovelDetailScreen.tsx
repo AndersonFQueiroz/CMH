@@ -1,13 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Badge } from '../components/common/Badge';
 import { BaseButton } from '../components/common/BaseButton';
 import { Loader } from '../components/common/Loader';
 import { ImovelAvatar } from '../components/imovel/ImovelAvatar';
 import type { RootStackParamList } from '../navigation/types';
-import { onImovelSalvo } from '../services/imovelEvents';
+import { notificarImovelExcluido, onImovelSalvo } from '../services/imovelEvents';
 import imovelService from '../services/imovelService';
 import type { Imovel } from '../types/imovel';
 import { formatArea, formatDataBR, formatPreco, formatTelefone } from '../utils/format';
@@ -44,12 +44,27 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Não foi possível carregar este imóvel.';
 }
 
+function erroDeExclusao(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : 'Não foi possível excluir o anúncio. Tente novamente.';
+}
+
 export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Element {
   const { id } = route.params;
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const montado = useRef(true);
+
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+    };
+  }, []);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: imovel?.titulo ?? 'Detalhes do imóvel' });
@@ -88,6 +103,35 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
   );
 
   const tentarNovamente = useCallback(() => setRetryKey((atual) => atual + 1), []);
+
+  const excluirAnuncio = useCallback(async (): Promise<void> => {
+    if (excluindo) return;
+    setExcluindo(true);
+
+    try {
+      await imovelService.delete(id);
+      notificarImovelExcluido(id);
+      navigation.goBack();
+    } catch (error: unknown) {
+      if (!montado.current) return;
+      Alert.alert('Erro ao excluir', erroDeExclusao(error));
+    } finally {
+      if (montado.current) setExcluindo(false);
+    }
+  }, [excluindo, id, navigation]);
+
+  // RF-15: a exclusão só acontece depois de confirmada no alerta.
+  const confirmarExclusao = useCallback((): void => {
+    if (!imovel) return;
+    Alert.alert(
+      'Excluir anúncio?',
+      `Excluir \"${imovel.titulo}\"? Essa ação é definitiva e o anúncio não poderá ser recuperado.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', style: 'destructive', onPress: () => void excluirAnuncio() },
+      ],
+    );
+  }, [excluirAnuncio, imovel]);
 
   if (isLoading && !imovel) {
     return (
@@ -154,10 +198,22 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
 
       <View style={styles.actions}>
         <BaseButton
+          disabled={excluindo}
           onPress={() => navigation.navigate('ImovelForm', { id })}
           title="Editar anúncio"
         />
-        <BaseButton onPress={() => navigation.goBack()} title="Voltar" variant="secondary" />
+        <BaseButton
+          isLoading={excluindo}
+          onPress={confirmarExclusao}
+          title="Excluir anúncio"
+          variant="destructive"
+        />
+        <BaseButton
+          disabled={excluindo}
+          onPress={() => navigation.goBack()}
+          title="Voltar"
+          variant="secondary"
+        />
       </View>
     </ScrollView>
   );
