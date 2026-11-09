@@ -1,14 +1,17 @@
 # CMH Mobile — Setup, navegação e integração HTTP
 
-> A listagem, os filtros e os detalhes já consomem a API. A camada HTTP e os
-> tipos de domínio foram implementados na issue #17; o formulário continua no
-> escopo das issues #22–#25.
+> A listagem, os filtros, os detalhes e o formulário de cadastro/edição já
+> consomem a API. A camada HTTP e os tipos de domínio foram implementados na
+> issue #17; a foto da fachada chegou na #23; multipart e exclusão continuam
+> nas issues #24–#25.
 >
 > | Fica para | Issue |
 > | --- | --- |
 > | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 (implementado) |
 > | Lista real, busca/filtros, detalhes | #19, #20, #21 (implementado) |
-> | Formulário real, foto, multipart, erros | #22, #23, #24, #25 |
+> | Formulário de cadastro/edição com pickers, máscaras e erros 422 | #22 (implementado) |
+> | Foto da fachada (câmera/galeria, preview, trocar/remover) | #23 (implementado) |
+> | Multipart validado em aparelho, exclusão e erros globais | #24, #25 |
 
 ## Pré-requisitos
 
@@ -92,3 +95,51 @@ Os testes usam um adapter Axios sem acesso à rede e um substituto do FormData
 nativo para verificar rotas, JSON, multipart, paginação e tratamento de erros.
 O upload real pela câmera/galeria deve ser validado em Android/iOS quando as
 telas correspondentes forem integradas.
+
+## Formulário de cadastro e edição (#22)
+
+`ImovelFormScreen` atende criação (`ImovelForm` sem `id`) e edição
+(`ImovelForm` com `{ id }`, carregando o anúncio por `getById`).
+
+- **Pickers:** `tipo` e `finalidade` usam `OptionPicker` (chips de seleção
+  única em `src/components/common`). Ao escolher `terreno`, quartos e
+  banheiros ficam travados em `0`.
+- **Máscaras** (`src/utils/masks.ts`): preço em `R$ 2.500,00` (dígitos
+  digitados viram centavos), área decimal com vírgula, telefone
+  `(XX) XXXXX-XXXX`/`(XX) XXXX-XXXX` e data `DD/MM/AAAA` (enviada como
+  `YYYY-MM-DD`).
+- **Validação local** (`src/utils/imovelForm.ts`): espelha as regras e as
+  mensagens de `StoreImovelRequest`/`UpdateImovelRequest`. Na edição, uma
+  data de disponibilidade já passada só é recusada se for alterada.
+- **Edição parcial:** o `PUT` envia só os campos alterados.
+- **Erros 422:** `errosDaApi` transforma `response.data.errors` em uma
+  mensagem por campo; erros de campos fora do formulário aparecem no aviso
+  do topo.
+- Depois de salvar, a lista recarrega e o detalhe usa o anúncio devolvido
+  pela API (`src/services/imovelEvents.ts`). A criação abre o detalhe do
+  novo anúncio.
+
+Os testes de máscaras, validação, montagem do payload e erros 422 ficam em
+`tests/imovelForm.test.ts` (`npm test`).
+
+## Foto da fachada (#23)
+
+O formulário usa `FotoPicker` (`src/components/imovel`) e o hook
+`useImagePicker` (`src/hooks`), com `expo-image-picker` e
+`expo-image-manipulator`:
+
+- **Câmera ou galeria**, com recorte 4:3. As permissões são pedidas na hora;
+  se forem negadas de vez, o alerta oferece abrir as configurações.
+- **Compressão:** fotos com mais de 1280 px de largura são reduzidas, e toda
+  foto é regravada como JPEG com qualidade 0,7. Isso respeita o limite de
+  2 MB da API e converte fotos HEIC do iPhone (`src/utils/foto.ts`).
+- **Preview** antes do envio, com opção de trocar ou remover. Na edição,
+  aparece a foto atual do anúncio até que uma nova seja escolhida.
+- Ao salvar, a foto vai junto no `create`/`update` do `imovelService`
+  (multipart com `_method=PUT` na edição). Um erro 422 da foto aparece
+  abaixo dela.
+
+As mensagens de permissão do iOS e Android ficam no plugin
+`expo-image-picker` do `app.json` (valem para builds nativos; no Expo Go
+aparecem as mensagens padrão). O envio com foto precisa ser testado no Expo
+Go: na versão web o `FormData` do React Native não envia o arquivo.

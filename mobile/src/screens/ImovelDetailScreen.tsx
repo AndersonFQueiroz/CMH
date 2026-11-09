@@ -7,6 +7,7 @@ import { BaseButton } from '../components/common/BaseButton';
 import { Loader } from '../components/common/Loader';
 import { ImovelAvatar } from '../components/imovel/ImovelAvatar';
 import type { RootStackParamList } from '../navigation/types';
+import { onImovelSalvo } from '../services/imovelEvents';
 import imovelService from '../services/imovelService';
 import type { Imovel } from '../types/imovel';
 import { formatArea, formatDataBR, formatPreco, formatTelefone } from '../utils/format';
@@ -76,6 +77,15 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
       isCurrentRequest = false;
     };
   }, [id, retryKey]);
+
+  // Após editar no formulário, usa o anúncio devolvido pela API sem nova requisição.
+  useEffect(
+    () =>
+      onImovelSalvo((salvo) => {
+        if (salvo.id === id) setImovel(salvo);
+      }),
+    [id],
+  );
 
   const tentarNovamente = useCallback(() => setRetryKey((atual) => atual + 1), []);
 

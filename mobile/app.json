@@ -21,6 +21,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O CMH acessa suas fotos para você escolher a foto da fachada do imóvel.",
+          "cameraPermission": "O CMH usa a câmera para você fotografar a fachada do imóvel.",
+          "microphonePermission": false
+        }
+      ]
+    ]
   }
 }
