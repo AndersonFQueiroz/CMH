@@ -15,6 +15,7 @@ import { BaseInput } from '../components/common/BaseInput';
 import { Loader } from '../components/common/Loader';
 import { ImovelCard } from '../components/imovel/ImovelCard';
 import type { RootStackParamList } from '../navigation/types';
+import { onImovelSalvo } from '../services/imovelEvents';
 import imovelService from '../services/imovelService';
 import type {
   FinalidadeImovel,
@@ -290,6 +291,9 @@ export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
     setIsRefreshing(true);
     setRefreshKey((current) => current + 1);
   }, []);
+
+  // Recarrega em segundo plano quando um anúncio é criado ou editado no formulário.
+  useEffect(() => onImovelSalvo(() => setRefreshKey((current) => current + 1)), []);
 
   const carregarProximaPagina = useCallback(async () => {
     if (loadingNextPage.current || paginaAtual >= ultimaPagina) return;
