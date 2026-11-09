@@ -15,10 +15,12 @@ import { BaseButton } from '../components/common/BaseButton';
 import { BaseInput } from '../components/common/BaseInput';
 import { Loader } from '../components/common/Loader';
 import { OptionPicker } from '../components/common/OptionPicker';
+import { FotoPicker } from '../components/imovel/FotoPicker';
+import { useImagePicker, type OrigemFoto } from '../hooks/useImagePicker';
 import type { RootStackParamList } from '../navigation/types';
 import { notificarImovelSalvo } from '../services/imovelEvents';
 import imovelService from '../services/imovelService';
-import type { Imovel, TipoImovel } from '../types/imovel';
+import type { FotoImovel, Imovel, TipoImovel } from '../types/imovel';
 import {
   camposAlterados,
   errosDaApi,
@@ -57,6 +59,8 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
   const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [foto, setFoto] = useState<FotoImovel | null>(null);
+  const { selecionarFoto, processando: processandoFoto } = useImagePicker();
   const scrollRef = useRef<ScrollView>(null);
   const montado = useRef(true);
 
@@ -100,18 +104,37 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
     };
   }, [editingId, retryKey]);
 
+  const limparErro = useCallback((campo: keyof ImovelFormErrors): void => {
+    setErros((atuais) => {
+      if (atuais[campo] === undefined) return atuais;
+      const proximos = { ...atuais };
+      delete proximos[campo];
+      return proximos;
+    });
+  }, []);
+
   const alterar = useCallback(
     <K extends ImovelFormField>(campo: K, valor: ImovelFormValues[K]): void => {
       setValores((atuais) => ({ ...atuais, [campo]: valor }));
-      setErros((atuais) => {
-        if (atuais[campo] === undefined) return atuais;
-        const proximos = { ...atuais };
-        delete proximos[campo];
-        return proximos;
-      });
+      limparErro(campo);
     },
-    [],
+    [limparErro],
   );
+
+  const escolherFoto = useCallback(
+    async (origem: OrigemFoto): Promise<void> => {
+      const escolhida = await selecionarFoto(origem);
+      if (!escolhida || !montado.current) return;
+      setFoto(escolhida);
+      limparErro('foto');
+    },
+    [limparErro, selecionarFoto],
+  );
+
+  const removerFoto = useCallback((): void => {
+    setFoto(null);
+    limparErro('foto');
+  }, [limparErro]);
 
   // O aviso "corrija os campos" some quando o último erro de campo é resolvido.
   useEffect(() => {
@@ -137,7 +160,7 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
   };
 
   const salvar = async (): Promise<void> => {
-    if (isSaving) return;
+    if (isSaving || processandoFoto) return;
 
     const dataOriginal = original?.data_disponibilidade.split('T')[0];
     const errosLocais = validarImovelForm(valores, { dataOriginal });
@@ -158,13 +181,13 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
 
       if (original) {
         const alterados = camposAlterados(montarDTO(valoresDoImovel(original)), dto);
-        if (Object.keys(alterados).length === 0) {
+        if (Object.keys(alterados).length === 0 && !foto) {
           Alert.alert('Nada para salvar', 'Nenhum campo do anúncio foi alterado.');
           return;
         }
-        salvo = await imovelService.update(original.id, alterados);
+        salvo = await imovelService.update(original.id, foto ? { ...alterados, foto } : alterados);
       } else {
-        salvo = await imovelService.create(dto);
+        salvo = await imovelService.create(foto ? { ...dto, foto } : dto);
       }
 
       notificarImovelSalvo(salvo);
@@ -224,6 +247,15 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
         ) : null}
 
         <Text style={styles.sectionTitle}>Anúncio</Text>
+        <FotoPicker
+          disabled={isSaving}
+          error={erros.foto}
+          foto={foto}
+          fotoAtualUrl={original?.foto_url}
+          onRemover={removerFoto}
+          onSelecionar={(origem) => void escolherFoto(origem)}
+          processando={processandoFoto}
+        />
         <BaseInput
           error={erros.titulo}
           label="Título *"
@@ -362,6 +394,7 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
 
         <View style={styles.actions}>
           <BaseButton
+            disabled={processandoFoto}
             isLoading={isSaving}
             onPress={() => void salvar()}
             title={isEditing ? 'Salvar alterações' : 'Cadastrar anúncio'}
