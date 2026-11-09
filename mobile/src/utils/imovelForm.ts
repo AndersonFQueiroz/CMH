@@ -252,6 +252,8 @@ export function errosDaApi(error: unknown): ErrosDaApi {
     };
   }
 
+  if (error.response?.status === 413) return { campos: { foto: error.message }, geral: null };
+
   const errors = error.response?.status === 422 ? error.response.data?.errors : undefined;
   if (!errors) return { campos: {}, geral: error.message };
 
