@@ -6,7 +6,7 @@ import {
   type PressableProps,
 } from 'react-native';
 
-type ButtonVariant = 'primary' | 'secondary' | 'text';
+type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'text';
 
 interface BaseButtonProps extends Omit<PressableProps, 'children'> {
   title: string;
@@ -39,9 +39,16 @@ export function BaseButton({
       {...pressableProps}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : '#174EA6'} />
+        <ActivityIndicator
+          color={variant === 'primary' || variant === 'destructive' ? '#fff' : '#174EA6'}
+        />
       ) : (
-        <Text style={[styles.label, variant !== 'primary' && styles.alternativeLabel]}>
+        <Text
+          style={[
+            styles.label,
+            (variant === 'secondary' || variant === 'text') && styles.alternativeLabel,
+          ]}
+        >
           {title}
         </Text>
       )}
@@ -59,6 +66,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   disabled: { opacity: 0.55 },
+  destructive: { backgroundColor: '#B3261E' },
   label: { color: '#fff', fontSize: 15, fontWeight: '600' },
   pressed: { opacity: 0.82 },
   primary: { backgroundColor: '#174EA6' },
@@ -68,6 +76,7 @@ const styles = StyleSheet.create({
 });
 
 const VARIANT_STYLES = {
+  destructive: styles.destructive,
   primary: styles.primary,
   secondary: styles.secondary,
   text: styles.textButton,
