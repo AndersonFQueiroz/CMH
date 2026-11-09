@@ -189,10 +189,15 @@ test('erros 422 da API viram mensagens por campo', () => {
   assert.equal(resultado.geral, 'Confira os dados informados e tente novamente.');
 });
 
-test('erros 422 de campos fora do formulário vão para a mensagem geral', () => {
+test('erro 422 da foto aparece no campo da foto', () => {
   const resultado = errosDaApi(erro422({ foto: ['A foto deve ter no máximo 2048 KB.'] }));
+  assert.deepEqual(resultado.campos, { foto: 'A foto deve ter no máximo 2048 KB.' });
+});
+
+test('erros 422 de campos fora do formulário vão para a mensagem geral', () => {
+  const resultado = errosDaApi(erro422({ _method: ['O método de atualização deve ser PUT ou PATCH.'] }));
   assert.deepEqual(resultado.campos, {});
-  assert.equal(resultado.geral, 'A foto deve ter no máximo 2048 KB.');
+  assert.equal(resultado.geral, 'O método de atualização deve ser PUT ou PATCH.');
 });
 
 test('falhas sem 422 mantêm a mensagem do interceptor', () => {

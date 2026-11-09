@@ -44,7 +44,8 @@ export interface ImovelFormValues {
 }
 
 export type ImovelFormField = keyof ImovelFormValues;
-export type ImovelFormErrors = Partial<Record<ImovelFormField, string>>;
+/** Inclui `foto`, que fica fora de `ImovelFormValues` por não ser texto. */
+export type ImovelFormErrors = Partial<Record<ImovelFormField | 'foto', string>>;
 
 export const TIPO_OPCOES: { label: string; value: TipoImovel }[] = [
   { label: 'Casa', value: 'casa' },
@@ -238,8 +239,8 @@ export interface ErrosDaApi {
   geral: string | null;
 }
 
-function ehCampoDoFormulario(campo: string): campo is ImovelFormField {
-  return (CAMPOS_DO_FORMULARIO as string[]).includes(campo);
+function ehCampoDoFormulario(campo: string): campo is keyof ImovelFormErrors {
+  return campo === 'foto' || (CAMPOS_DO_FORMULARIO as string[]).includes(campo);
 }
 
 /** Converte a resposta 422 do Laravel em erros por campo, em português. */

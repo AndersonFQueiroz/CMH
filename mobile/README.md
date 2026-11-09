@@ -2,14 +2,16 @@
 
 > A listagem, os filtros, os detalhes e o formulário de cadastro/edição já
 > consomem a API. A camada HTTP e os tipos de domínio foram implementados na
-> issue #17; foto, multipart e exclusão continuam nas issues #23–#25.
+> issue #17; a foto da fachada chegou na #23; multipart e exclusão continuam
+> nas issues #24–#25.
 >
 > | Fica para | Issue |
 > | --- | --- |
 > | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 (implementado) |
 > | Lista real, busca/filtros, detalhes | #19, #20, #21 (implementado) |
 > | Formulário de cadastro/edição com pickers, máscaras e erros 422 | #22 (implementado) |
-> | Foto, multipart, exclusão e erros globais | #23, #24, #25 |
+> | Foto da fachada (câmera/galeria, preview, trocar/remover) | #23 (implementado) |
+> | Multipart validado em aparelho, exclusão e erros globais | #24, #25 |
 
 ## Pré-requisitos
 
@@ -119,3 +121,25 @@ telas correspondentes forem integradas.
 
 Os testes de máscaras, validação, montagem do payload e erros 422 ficam em
 `tests/imovelForm.test.ts` (`npm test`).
+
+## Foto da fachada (#23)
+
+O formulário usa `FotoPicker` (`src/components/imovel`) e o hook
+`useImagePicker` (`src/hooks`), com `expo-image-picker` e
+`expo-image-manipulator`:
+
+- **Câmera ou galeria**, com recorte 4:3. As permissões são pedidas na hora;
+  se forem negadas de vez, o alerta oferece abrir as configurações.
+- **Compressão:** fotos com mais de 1280 px de largura são reduzidas, e toda
+  foto é regravada como JPEG com qualidade 0,7. Isso respeita o limite de
+  2 MB da API e converte fotos HEIC do iPhone (`src/utils/foto.ts`).
+- **Preview** antes do envio, com opção de trocar ou remover. Na edição,
+  aparece a foto atual do anúncio até que uma nova seja escolhida.
+- Ao salvar, a foto vai junto no `create`/`update` do `imovelService`
+  (multipart com `_method=PUT` na edição). Um erro 422 da foto aparece
+  abaixo dela.
+
+As mensagens de permissão do iOS e Android ficam no plugin
+`expo-image-picker` do `app.json` (valem para builds nativos; no Expo Go
+aparecem as mensagens padrão). O envio com foto precisa ser testado no Expo
+Go: na versão web o `FormData` do React Native não envia o arquivo.
