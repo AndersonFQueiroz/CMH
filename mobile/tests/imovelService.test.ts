@@ -147,6 +147,7 @@ test('troca só a foto e lê foto_url fora do envelope data', async () => {
 for (const [status, mensagem] of [
   [422, 'Confira os dados informados e tente novamente.'],
   [404, 'Imóvel não encontrado.'],
+  [413, 'A foto é grande demais. Escolha uma imagem de até 2 MB.'],
   [500, 'Não foi possível concluir a solicitação. Tente novamente.'],
 ] as const) {
   test(`trata erro ${status} em português e preserva a resposta original`, async () => {

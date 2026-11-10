@@ -29,6 +29,9 @@ api.interceptors.response.use(
         error.message = 'Não foi possível conectar à API. Verifique sua conexão e tente novamente.';
       } else if (error.response.status === 422) {
         error.message = 'Confira os dados informados e tente novamente.';
+      } else if (error.response.status === 413) {
+        // O servidor/proxy barra a foto antes da validação do Laravel (sem 422).
+        error.message = 'A foto é grande demais. Escolha uma imagem de até 2 MB.';
       } else if (error.response.status === 404) {
         error.message = 'Imóvel não encontrado.';
       } else {

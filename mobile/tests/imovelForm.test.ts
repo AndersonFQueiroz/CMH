@@ -194,6 +194,15 @@ test('erro 422 da foto aparece no campo da foto', () => {
   assert.deepEqual(resultado.campos, { foto: 'A foto deve ter no máximo 2048 KB.' });
 });
 
+test('foto grande demais barrada antes da validação (413) aparece no campo da foto', () => {
+  const config = { headers: new AxiosHeaders() };
+  const mensagem = 'A foto é grande demais. Escolha uma imagem de até 2 MB.';
+  const error = new AxiosError(mensagem, 'ERR_BAD_REQUEST', config);
+  error.response = { data: {}, status: 413, statusText: 'Payload Too Large', headers: {}, config };
+
+  assert.deepEqual(errosDaApi(error), { campos: { foto: mensagem }, geral: null });
+});
+
 test('erros 422 de campos fora do formulário vão para a mensagem geral', () => {
   const resultado = errosDaApi(erro422({ _method: ['O método de atualização deve ser PUT ou PATCH.'] }));
   assert.deepEqual(resultado.campos, {});
