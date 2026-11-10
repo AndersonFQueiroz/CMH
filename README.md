@@ -151,8 +151,7 @@ Escaneie o QR Code com a câmera (iOS) ou pelo app **Expo Go** (Android).
 ## 🎓 Roteiro de Demonstração (Entrega 1)
 
 Pré-requisitos: backend com `php artisan serve --host=0.0.0.0 --port=8000` e
-`EXPO_PUBLIC_API_URL` apontando para o IP local. Use **Expo Go** no aparelho:
-na versão web o `FormData` não envia o arquivo da foto.
+`EXPO_PUBLIC_API_URL` configurado. Funciona tanto no **Expo Go** no aparelho quanto na **versão Web**.
 
 1. **Listar** — abra o app e confirme os anúncios do seeder com foto, preço formatado e pull-to-refresh.
 2. **Filtrar** — busque por texto e combine tipo, finalidade, cidade e faixa de preço.

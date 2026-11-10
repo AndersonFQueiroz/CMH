@@ -5,8 +5,27 @@ export interface ApiErrorResponse {
   errors?: Record<string, string[]>;
 }
 
+export function resolveApiBaseUrl(): string | undefined {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
+
+  // No navegador dentro do GitHub Codespaces, requisições para 'localhost:8000'
+  // falham porque tentam acessar a máquina do usuário ou são bloqueadas por Mixed Content (HTTPS -> HTTP).
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    const isCodespace =
+      hostname.endsWith('.app.github.dev') || hostname.endsWith('.preview.app.github.dev');
+
+    if (isCodespace && (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+      const backendHostname = hostname.replace(/-\d+(\.(?:preview\.)?app\.github\.dev)$/, '-8000$1');
+      return `${window.location.protocol}//${backendHostname}/api/v1`;
+    }
+  }
+
+  return envUrl;
+}
+
 export const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, ''),
+  baseURL: resolveApiBaseUrl(),
   timeout: 15000,
   headers: { Accept: 'application/json' },
 });

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { colors, radii } from '../../theme';
+import { resolverFotoUrl } from '../../utils/foto';
 
 interface ImovelAvatarProps {
   fotoUrl: string | null;
@@ -23,8 +24,9 @@ export function ImovelAvatar({
   iconSize = 34,
   style,
 }: ImovelAvatarProps): React.JSX.Element {
+  const urlFinal = resolverFotoUrl(fotoUrl);
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(fotoUrl) && !imageFailed;
+  const showImage = Boolean(urlFinal) && !imageFailed;
   const flatStyle = StyleSheet.flatten(style);
   const hasCustomSize =
     flatStyle?.aspectRatio !== undefined ||
@@ -33,7 +35,7 @@ export function ImovelAvatar({
 
   useEffect(() => {
     setImageFailed(false);
-  }, [fotoUrl]);
+  }, [urlFinal]);
 
   return (
     <View
@@ -41,13 +43,13 @@ export function ImovelAvatar({
       accessibilityRole="image"
       style={[styles.container, !hasCustomSize && { height: size, width: size }, style]}
     >
-      {showImage && fotoUrl ? (
+      {showImage && urlFinal ? (
         <Image
           accessibilityLabel="Foto do imóvel"
           fadeDuration={160}
           onError={() => setImageFailed(true)}
           resizeMode="cover"
-          source={{ uri: fotoUrl }}
+          source={{ uri: urlFinal }}
           style={StyleSheet.absoluteFill}
         />
       ) : (

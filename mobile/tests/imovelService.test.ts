@@ -27,7 +27,7 @@ const originalFormData = globalThis.FormData;
 class NativeFormData extends originalFormData {
   readonly parts = new Map<string, unknown>();
 
-  override append(name: string, value: string | Blob): void {
+  override append(name: string, value: string | Blob, _fileName?: string): void {
     this.parts.set(name, value);
   }
 }
@@ -111,6 +111,32 @@ test('cadastra com foto por URI e serializa os campos para o Laravel', async () 
   assert.equal(form.parts.get('area_m2'), '120.5');
   assert.equal(form.parts.get('data_disponibilidade'), dados.data_disponibilidade);
   assert.equal(form.parts.has('_method'), false);
+});
+
+test('no ambiente Web converte URI de foto para Blob antes de anexar ao FormData', async () => {
+  const blobFake = new Blob(['imagem-binaria'], { type: 'image/jpeg' });
+  const globalObj = globalThis as unknown as { window?: unknown };
+  const windowOriginal = globalObj.window;
+  globalObj.window = {
+    fetch: async () => ({
+      blob: async () => blobFake,
+    }),
+  };
+
+  try {
+    await imovelService.create({
+      ...dados,
+      foto: { uri: 'blob:http://localhost/foto-123', name: 'foto.jpg', type: 'image/jpeg' },
+    });
+    const form = multipart();
+    assert.equal(form.parts.get('foto'), blobFake);
+  } finally {
+    if (windowOriginal === undefined) {
+      delete globalObj.window;
+    } else {
+      globalObj.window = windowOriginal;
+    }
+  }
 });
 
 test('atualiza campos parciais sem foto com PUT e JSON', async () => {
