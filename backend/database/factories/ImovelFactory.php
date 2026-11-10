@@ -96,6 +96,48 @@ class ImovelFactory extends Factory
         ];
     }
 
+    /**
+     * Garante que terrenos nunca carreguem atributos de construção, mesmo
+     * quando o tipo é sobrescrito depois do sorteio da definition.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Imovel $imovel): void {
+            if ($imovel->tipo !== 'terreno') {
+                return;
+            }
+
+            $imovel->quartos = 0;
+            $imovel->banheiros = 0;
+            $imovel->vagas = 0;
+        });
+    }
+
+    /**
+     * Recria os campos dependentes do tipo/finalidade depois de uma troca
+     * explícita, para títulos, preços e cômodos não ficarem incoerentes.
+     */
+    public function comTipo(string $tipo, ?string $finalidade = null): static
+    {
+        return $this->state(function (array $attributes) use ($tipo, $finalidade): array {
+            $finalidade = $finalidade ?? $attributes['finalidade'] ?? 'venda';
+            $cidade = $attributes['cidade'] ?? $this->faker->randomElement(self::CIDADES);
+            $cidadeCurta = explode('/', $cidade)[0];
+
+            return [
+                'tipo' => $tipo,
+                'finalidade' => $finalidade,
+                'titulo' => $this->titulo($tipo, $finalidade, $cidadeCurta),
+                'descricao' => $this->descricao($tipo, $finalidade),
+                'preco' => $this->preco($tipo, $finalidade),
+                'area_m2' => $this->area($tipo),
+                'quartos' => $this->quartos($tipo),
+                'banheiros' => $this->banheiros($tipo),
+                'vagas' => $this->vagas($tipo),
+            ];
+        });
+    }
+
     private function titulo(string $tipo, string $finalidade, string $cidade): string
     {
         $operacao = $finalidade === 'venda' ? 'à venda' : 'para alugar';
@@ -263,7 +305,7 @@ class ImovelFactory extends Factory
     private function banheiros(string $tipo): int
     {
         return match ($tipo) {
-            'terreno' => $this->faker->numberBetween(0, 1),
+            'terreno' => 0,
             'kitnet' => 1,
             'comercial' => $this->faker->numberBetween(1, 3),
             default => $this->faker->numberBetween(1, 4),

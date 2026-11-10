@@ -220,6 +220,8 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
     );
   }
 
+  const isTerreno = imovel.tipo === 'terreno';
+
   return (
     <View style={styles.screen}>
       {isFocused ? <StatusBar style="light" /> : null}
@@ -272,19 +274,27 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
             <View style={styles.specPanel}>
               <View style={styles.specRow}>
                 <SpecCell icon="resize-outline" label="Área" value={formatArea(imovel.area_m2)} />
-                <View style={styles.specDivider} />
-                <SpecCell icon="bed-outline" label="Quartos" value={String(imovel.quartos)} />
+                {!isTerreno ? (
+                  <>
+                    <View style={styles.specDivider} />
+                    <SpecCell icon="bed-outline" label="Quartos" value={String(imovel.quartos)} />
+                  </>
+                ) : null}
               </View>
-              <View style={styles.specHairline} />
-              <View style={styles.specRow}>
-                <SpecCell
-                  icon="water-outline"
-                  label="Banheiros"
-                  value={String(imovel.banheiros)}
-                />
-                <View style={styles.specDivider} />
-                <SpecCell icon="car-outline" label="Vagas" value={String(imovel.vagas)} />
-              </View>
+              {!isTerreno ? (
+                <>
+                  <View style={styles.specHairline} />
+                  <View style={styles.specRow}>
+                    <SpecCell
+                      icon="water-outline"
+                      label="Banheiros"
+                      value={String(imovel.banheiros)}
+                    />
+                    <View style={styles.specDivider} />
+                    <SpecCell icon="car-outline" label="Vagas" value={String(imovel.vagas)} />
+                  </View>
+                </>
+              ) : null}
             </View>
           </View>
 

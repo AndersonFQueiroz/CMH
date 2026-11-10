@@ -316,3 +316,28 @@ test('detalhe com 404 exibe "Imóvel não encontrado." com opções de voltar ou
   await act(async () => {});
   assert.equal(requests.length, 2, 'tentar novamente refaz o GET');
 });
+
+test('detalhe de terreno não exibe quartos, banheiros nem vagas', async () => {
+  const terreno: Imovel = {
+    ...imovelFixture,
+    tipo: 'terreno',
+    titulo: 'Terreno plano para construir',
+    quartos: 0,
+    banheiros: 0,
+    vagas: 0,
+  };
+  api.defaults.adapter = async (config) => {
+    requests.push(config);
+    return resposta(200, { data: terreno }, config);
+  };
+
+  await montarDetalhe(7);
+  await act(async () => {});
+
+  const textos = textoDaTela();
+  assert.ok(textos.some((texto) => texto.includes('Terreno plano para construir')));
+  assert.ok(textos.includes('Área'), 'a área continua visível');
+  assert.ok(!textos.includes('Quartos'));
+  assert.ok(!textos.includes('Banheiros'));
+  assert.ok(!textos.includes('Vagas'));
+});

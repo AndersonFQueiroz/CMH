@@ -16,14 +16,15 @@ class ImovelSeeder extends Seeder
         // Base aleatória cobre todos os tipos/finalidades via ImovelFactory.
         Imovel::factory()->count(12)->create();
 
-        // Garante variedade mínima por tipo para a demonstração.
-        Imovel::factory()->create(['tipo' => 'casa', 'finalidade' => 'venda']);
-        Imovel::factory()->create(['tipo' => 'casa', 'finalidade' => 'aluguel']);
-        Imovel::factory()->create(['tipo' => 'apartamento', 'finalidade' => 'venda']);
-        Imovel::factory()->create(['tipo' => 'apartamento', 'finalidade' => 'aluguel']);
-        Imovel::factory()->create(['tipo' => 'kitnet', 'finalidade' => 'aluguel']);
-        Imovel::factory()->create(['tipo' => 'comercial', 'finalidade' => 'aluguel']);
-        Imovel::factory()->create(['tipo' => 'comercial', 'finalidade' => 'venda']);
-        Imovel::factory()->create(['tipo' => 'terreno', 'finalidade' => 'venda']);
+        // Garante variedade mínima por tipo, recriando os campos dependentes
+        // para o título/preço/cômodos combinarem com o tipo escolhido.
+        Imovel::factory()->comTipo('casa', 'venda')->create();
+        Imovel::factory()->comTipo('casa', 'aluguel')->create();
+        Imovel::factory()->comTipo('apartamento', 'venda')->create();
+        Imovel::factory()->comTipo('apartamento', 'aluguel')->create();
+        Imovel::factory()->comTipo('kitnet', 'aluguel')->create();
+        Imovel::factory()->comTipo('comercial', 'aluguel')->create();
+        Imovel::factory()->comTipo('comercial', 'venda')->create();
+        Imovel::factory()->comTipo('terreno', 'venda')->create();
     }
 }

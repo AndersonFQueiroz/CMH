@@ -57,6 +57,8 @@ function Meta({ icon, label, value }: MetaProps): React.JSX.Element {
 }
 
 export function ImovelCard({ imovel, onPress }: ImovelCardProps): React.JSX.Element {
+  const isTerreno = imovel.tipo === 'terreno';
+
   return (
     <Pressable
       accessibilityLabel={`${imovel.titulo}, ${formatPreco(imovel.preco, imovel.finalidade)}, ${imovel.cidade}`}
@@ -107,9 +109,15 @@ export function ImovelCard({ imovel, onPress }: ImovelCardProps): React.JSX.Elem
           {imovel.titulo}
         </Text>
         <View style={styles.metaRow}>
-          <Meta icon="bed-outline" label="quartos" value={String(imovel.quartos)} />
-          <Meta icon="water-outline" label="banheiros" value={String(imovel.banheiros)} />
-          <Meta icon="car-outline" label="vagas" value={String(imovel.vagas)} />
+          {!isTerreno && imovel.quartos > 0 ? (
+            <Meta icon="bed-outline" label="quartos" value={String(imovel.quartos)} />
+          ) : null}
+          {!isTerreno && imovel.banheiros > 0 ? (
+            <Meta icon="water-outline" label="banheiros" value={String(imovel.banheiros)} />
+          ) : null}
+          {!isTerreno && imovel.vagas > 0 ? (
+            <Meta icon="car-outline" label="vagas" value={String(imovel.vagas)} />
+          ) : null}
           <Meta icon="resize-outline" label="de área" value={formatArea(imovel.area_m2)} />
         </View>
       </View>
