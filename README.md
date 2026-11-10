@@ -4,10 +4,10 @@
 > Backend API REST em **Laravel** integrado com aplicativo móvel em **Expo (React Native) + TypeScript**.
 
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
-[![Laravel](https://img.shields.io/badge/Laravel-11%20%2F%2012-FF2D20)]()
-[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)]()
-[![Expo](https://img.shields.io/badge/Expo-SDK%2052-black)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)]()
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20)]()
+[![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4)]()
+[![Expo](https://img.shields.io/badge/Expo-SDK%2057-black)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 ---
@@ -63,11 +63,11 @@ O **CMH (Cadastro Móvel Habitacional)** é uma aplicação cliente-servidor par
 
 | Camada | Tecnologia | Descrição |
 | :--- | :--- | :--- |
-| **Backend API** | **Laravel (PHP 8.2+)** | MVC/API, Eloquent ORM e Form Requests. |
+| **Backend API** | **Laravel 13 (PHP 8.3+)** | MVC/API, Eloquent ORM e Form Requests. |
 | **Banco de Dados** | **SQLite / PostgreSQL** | Migrations versionadas. |
 | **Armazenamento de Fotos**| **Laravel Storage (disk: public)** | `storage/app/public/imoveis` via `php artisan storage:link`. |
-| **Frontend Mobile** | **Expo SDK (React Native)** | Android & iOS. |
-| **Linguagem Frontend** | **TypeScript 5** | Tipagem estrita. |
+| **Frontend Mobile** | **Expo SDK 57 (React Native 0.86)** | Android & iOS. |
+| **Linguagem Frontend** | **TypeScript 6** | Tipagem estrita. |
 | **Comunicação HTTP** | **Axios / Fetch API** | Base URL dinâmica para IP local. |
 | **Seleção de Mídia** | **expo-image-picker** | Foto da fachada via câmera ou galeria. |
 
@@ -95,9 +95,9 @@ A [documentação de testes e demonstração](docs/api/README.md) inclui a colle
 ## 💻 Como Executar o Projeto
 
 ### Pré-requisitos
-- PHP 8.2+ e Composer;
+- PHP 8.3+ e Composer;
 - Extensões PHP: `php-mbstring`, `php-xml`, `php-curl`, `php-zip`, `php-sqlite3` ou `php-mysql`;
-- Node.js 18+ e npm / yarn;
+- Node.js 20+ e npm / yarn;
 - App **Expo Go** no smartphone (ou emulador).
 
 ---
@@ -138,10 +138,41 @@ npm install
 # Configure a URL da API em .env ou src/services/api.ts
 # EXPO_PUBLIC_API_URL=http://<SEU_IP_LOCAL>:8000/api/v1
 
+npm run typecheck
+npm test
+
 npx expo start
 ```
 
 Escaneie o QR Code com a câmera (iOS) ou pelo app **Expo Go** (Android).
+
+---
+
+## 🎓 Roteiro de Demonstração (Entrega 1)
+
+Pré-requisitos: backend com `php artisan serve --host=0.0.0.0 --port=8000` e
+`EXPO_PUBLIC_API_URL` apontando para o IP local. Use **Expo Go** no aparelho:
+na versão web o `FormData` não envia o arquivo da foto.
+
+1. **Listar** — abra o app e confirme os anúncios do seeder com foto, preço formatado e pull-to-refresh.
+2. **Filtrar** — busque por texto e combine tipo, finalidade, cidade e faixa de preço.
+3. **Detalhar** — abra um anúncio e confira todos os atributos, inclusive data e telefone formatados.
+4. **Criar com foto** — toque em **Novo**, preencha os campos (números, strings e data) e escolha a fachada pela câmera ou galeria.
+5. **Editar** — altere preço/área e salve; confirme o reflexo na lista e no detalhe.
+6. **Trocar foto** — escolha outra imagem no formulário e salve; a foto antiga deve sumir do storage.
+7. **Excluir** — use o botão destrutivo, confirme o `Alert` e verifique a remoção da lista e do banco.
+
+Cobertura das categorias do edital na demo:
+
+| Categoria | Atributos demonstrados |
+| :--- | :--- |
+| **Números** | `id`, `preco`, `area_m2`, `quartos`, `banheiros`, `vagas` |
+| **Strings** | `titulo`, `descricao`, `tipo`, `finalidade`, `endereco`, `cidade`, `contato_telefone` |
+| **Datas** | `data_disponibilidade`, `created_at`, `updated_at` |
+| **Foto** | upload/URL em `foto`/`foto_url`, troca via câmera ou galeria |
+
+Validação automatizada antes da demo: `cd backend && php artisan test` e
+`cd mobile && npm run typecheck && npm test`.
 
 ---
 

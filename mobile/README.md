@@ -1,21 +1,20 @@
 # CMH Mobile — Setup, navegação e integração HTTP
 
-> A listagem, os filtros, os detalhes e o formulário de cadastro/edição já
-> consomem a API. A camada HTTP e os tipos de domínio foram implementados na
-> issue #17; a foto da fachada chegou na #23; multipart e exclusão continuam
-> nas issues #24–#25.
+> A listagem, os filtros, os detalhes, o formulário e o envio com foto já
+> consomem a API. Multipart e exclusão com confirmação chegaram nas issues
+> #24–#25; falta apenas a validação final em aparelho (#26).
 >
-> | Fica para | Issue |
+> | Recurso | Issue |
 > | --- | --- |
-> | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 (implementado) |
-> | Lista real, busca/filtros, detalhes | #19, #20, #21 (implementado) |
-> | Formulário de cadastro/edição com pickers, máscaras e erros 422 | #22 (implementado) |
-> | Foto da fachada (câmera/galeria, preview, trocar/remover) | #23 (implementado) |
-> | Multipart validado em aparelho, exclusão e erros globais | #24, #25 |
+> | `ImovelCard`, avatar, badges, botões, inputs e loaders reutilizáveis | #18 |
+> | Lista real, busca/filtros, detalhes | #19, #20, #21 |
+> | Formulário de cadastro/edição com pickers, máscaras e erros 422 | #22 |
+> | Foto da fachada (câmera/galeria, preview, trocar/remover) | #23 |
+> | Multipart (create/update com foto e erro 413) e exclusão com confirmação | #24, #25 |
 
 ## Pré-requisitos
 
-- Node 18+ / npm
+- Node 20+ / npm
 - App Expo Go no celular (mesma Wi-Fi do PC)
 - Backend rodando: `php artisan serve --host=0.0.0.0 --port=8000`
 

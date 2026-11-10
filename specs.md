@@ -49,7 +49,7 @@ O sistema **CMH** adota arquitetura desacoplada em duas camadas:
 
 | Tecnologia | Responsabilidade Principal |
 | :--- | :--- |
-| **Laravel 11 / 12** | Roteamento RESTful, DI e segurança. |
+| **Laravel 13 / PHP 8.3+** | Roteamento RESTful, DI e segurança. |
 | **Eloquent ORM** | Mapeamento, casts (`preco`, `area_m2` decimal, `disponivel` boolean, `data_disponibilidade` date). |
 | **Form Requests** | Validação isolada (enum tipo/finalidade, preço, datas). |
 | **API Resources** | Serialização JSON padronizada + `foto_url`. |
