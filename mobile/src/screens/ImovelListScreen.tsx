@@ -373,7 +373,7 @@ export function ImovelListScreen({ navigation }: Props): React.JSX.Element {
       keyExtractor={(item) => String(item.id)}
       ListEmptyComponent={emptyElement}
       ListFooterComponent={
-        isLoadingMore ? <Loader message="Carregando mais imóveis..." size="small" /> : null
+        isLoadingMore ? <Loader message="Carregando mais imóveis..." size="small" /> : undefined
       }
       ListHeaderComponent={headerElement}
       onEndReached={() => void carregarProximaPagina()}

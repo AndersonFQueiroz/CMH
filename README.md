@@ -6,7 +6,7 @@
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
 [![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20)]()
 [![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4)]()
-[![Expo](https://img.shields.io/badge/Expo-SDK%2057-black)]()
+[![Expo](https://img.shields.io/badge/Expo-SDK%2058-black)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
@@ -66,7 +66,7 @@ O **CMH (Cadastro Móvel Habitacional)** é uma aplicação cliente-servidor par
 | **Backend API** | **Laravel 13 (PHP 8.3+)** | MVC/API, Eloquent ORM e Form Requests. |
 | **Banco de Dados** | **SQLite / PostgreSQL** | Migrations versionadas. |
 | **Armazenamento de Fotos**| **Laravel Storage (disk: public)** | `storage/app/public/imoveis` via `php artisan storage:link`. |
-| **Frontend Mobile** | **Expo SDK 57 (React Native 0.86)** | Android & iOS. |
+| **Frontend Mobile** | **Expo SDK 58 (React Native 0.88)** | Android & iOS. |
 | **Linguagem Frontend** | **TypeScript 6** | Tipagem estrita. |
 | **Comunicação HTTP** | **Axios / Fetch API** | Base URL dinâmica para IP local. |
 | **Seleção de Mídia** | **expo-image-picker** | Foto da fachada via câmera ou galeria. |

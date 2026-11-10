@@ -9,6 +9,7 @@ import {
   Switch,
   Text,
   View,
+  type ScrollViewInstance,
 } from 'react-native';
 
 import { BaseButton } from '../components/common/BaseButton';
@@ -61,7 +62,7 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
   const [retryKey, setRetryKey] = useState(0);
   const [foto, setFoto] = useState<FotoImovel | null>(null);
   const { selecionarFoto, processando: processandoFoto } = useImagePicker();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const montado = useRef(true);
 
   useEffect(() => {

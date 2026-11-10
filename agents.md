@@ -16,7 +16,7 @@ O **CMH** é uma aplicação completa composta por uma **API REST em Laravel (PH
 | :--- | :--- | :--- |
 | **Backend** | Laravel 13 (PHP 8.3+) | API RESTful, Eloquent ORM, Form Requests, API Resources, Storage local público |
 | **Banco de Dados** | SQLite (dev) / PostgreSQL (prod) | Migrations versionadas com integridade referencial e índices |
-| **Frontend Mobile**| Expo SDK 57 / React Native 0.86 | Telas de listagem, visualização, cadastro e edição de imóveis com foto |
+| **Frontend Mobile**| Expo SDK 58 / React Native 0.88 | Telas de listagem, visualização, cadastro e edição de imóveis com foto |
 | **Linguagem Mobile**| TypeScript 6.x | Tipagem estrita, interfaces de domínio e DTOs |
 | **HTTP Client** | Axios / Fetch API | Configuração centralizada com timeout, interceptors e suporte a `multipart/form-data` |
 | **Mídia Mobile** | `expo-image-picker` | Captura da foto da fachada via câmera ou galeria |
