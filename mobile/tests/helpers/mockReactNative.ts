@@ -41,9 +41,17 @@ const Alert = {
   },
 };
 
+function achatarEstilo(estilo: unknown): Record<string, unknown> {
+  if (Array.isArray(estilo)) {
+    return Object.assign({}, ...estilo.map(achatarEstilo));
+  }
+  return typeof estilo === 'object' && estilo !== null ? (estilo as Record<string, unknown>) : {};
+}
+
 const StyleSheet = {
   absoluteFill: { bottom: 0, left: 0, position: 'absolute' as const, right: 0, top: 0 },
   create: <T extends Record<string, unknown>>(estilos: T): T => estilos,
+  flatten: achatarEstilo,
   hairlineWidth: 1,
 };
 
@@ -69,7 +77,12 @@ const mockRN = {
   Button: criarHost('button'),
   FlatList,
   Image: criarHost('image'),
-  Platform: { OS: 'ios' },
+  Linking: { openURL: async (): Promise<void> => undefined },
+  Platform: {
+    OS: 'ios',
+    select: <T,>(opcoes: { android?: T; default?: T; ios?: T; native?: T }): T | undefined =>
+      opcoes.ios ?? opcoes.default,
+  },
   Pressable: criarHost('pressable'),
   RefreshControl: criarHost('refreshcontrol'),
   ScrollView: criarHost('scrollview'),
@@ -79,11 +92,30 @@ const mockRN = {
   View: criarHost('view'),
 };
 
+const Ionicons = Object.assign(criarHost('ionicons'), { glyphMap: {} });
+const SafeAreaProvider = ({ children }: { children?: ReactNode }): ReactNode => children ?? null;
+const statusBar = (): null => null;
+
+const modulosMock: Record<string, unknown> = {
+  '@expo/vector-icons/Ionicons': { __esModule: true, default: Ionicons },
+  '@react-navigation/native': { __esModule: true, useIsFocused: () => true },
+  'expo-linear-gradient': { __esModule: true, LinearGradient: criarHost('lineargradient') },
+  'expo-status-bar': { __esModule: true, StatusBar: statusBar },
+  'react-native': mockRN,
+  'react-native-safe-area-context': {
+    __esModule: true,
+    SafeAreaProvider,
+    useSafeAreaInsets: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
+  },
+};
+
 type FuncaoLoad = (request: string, parent: NodeJS.Module | null, isMain: boolean) => unknown;
 
 const Modulo = require('node:module') as unknown as { _load: FuncaoLoad };
 const carregarOriginal = Modulo._load.bind(Modulo);
 Modulo._load = (request, parent, isMain) =>
-  request === 'react-native' ? mockRN : carregarOriginal(request, parent, isMain);
+  request in modulosMock
+    ? modulosMock[request]
+    : carregarOriginal(request, parent, isMain);
 
 export default mockRN;

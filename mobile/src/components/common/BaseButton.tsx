@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   ActivityIndicator,
   Pressable,
@@ -6,28 +7,39 @@ import {
   type PressableProps,
 } from 'react-native';
 
+import { colors, fonts, radii } from '../../theme';
+
 type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'text';
 
-interface BaseButtonProps extends Omit<PressableProps, 'children'> {
+interface BaseButtonProps extends Omit<PressableProps, 'children' | 'style'> {
   title: string;
   variant?: ButtonVariant;
   isLoading?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+  style?: PressableProps['style'];
 }
 
 export function BaseButton({
   title,
   variant = 'primary',
   isLoading = false,
+  icon,
   disabled,
   style,
   ...pressableProps
 }: BaseButtonProps): React.JSX.Element {
   const isDisabled = disabled || isLoading;
+  const iconColor =
+    variant === 'primary' || variant === 'destructive'
+      ? colors.white
+      : variant === 'text'
+        ? colors.accent
+        : colors.ink;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: Boolean(isDisabled), busy: isLoading }}
+      accessibilityState={{ busy: isLoading, disabled: Boolean(isDisabled) }}
       disabled={isDisabled}
       style={(state) => [
         styles.button,
@@ -40,17 +52,21 @@ export function BaseButton({
     >
       {isLoading ? (
         <ActivityIndicator
-          color={variant === 'primary' || variant === 'destructive' ? '#fff' : '#174EA6'}
+          color={variant === 'primary' || variant === 'destructive' ? colors.white : colors.accent}
         />
       ) : (
-        <Text
-          style={[
-            styles.label,
-            (variant === 'secondary' || variant === 'text') && styles.alternativeLabel,
-          ]}
-        >
-          {title}
-        </Text>
+        <>
+          {icon ? <Ionicons color={iconColor} name={icon} size={19} /> : null}
+          <Text
+            style={[
+              styles.label,
+              variant === 'secondary' && styles.secondaryLabel,
+              variant === 'text' && styles.textLabel,
+            ]}
+          >
+            {title}
+          </Text>
+        </>
       )}
     </Pressable>
   );
@@ -59,20 +75,31 @@ export function BaseButton({
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: radii.md,
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'center',
-    minHeight: 46,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    minHeight: 52,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
   },
-  disabled: { opacity: 0.55 },
-  destructive: { backgroundColor: '#B3261E' },
-  label: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  pressed: { opacity: 0.82 },
-  primary: { backgroundColor: '#174EA6' },
-  secondary: { backgroundColor: '#E8F0FE' },
-  textButton: { backgroundColor: 'transparent' },
-  alternativeLabel: { color: '#174EA6' },
+  disabled: { opacity: 0.48 },
+  destructive: { backgroundColor: colors.danger },
+  label: {
+    color: colors.white,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 15,
+  },
+  pressed: { opacity: 0.86, transform: [{ scale: 0.985 }] },
+  primary: { backgroundColor: colors.accent },
+  secondary: {
+    backgroundColor: colors.surface,
+    borderColor: colors.lineStrong,
+    borderWidth: 1,
+  },
+  secondaryLabel: { color: colors.ink },
+  textButton: { backgroundColor: 'transparent', minHeight: 44 },
+  textLabel: { color: colors.accent },
 });
 
 const VARIANT_STYLES = {

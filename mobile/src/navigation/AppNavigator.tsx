@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ImovelDetailScreen from '../screens/ImovelDetailScreen';
 import ImovelFormScreen from '../screens/ImovelFormScreen';
 import ImovelListScreen from '../screens/ImovelListScreen';
+import { colors, fonts } from '../theme';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -11,23 +12,36 @@ export function AppNavigator(): React.JSX.Element {
   return (
     <Stack.Navigator
       initialRouteName="ImovelList"
-      screenOptions={{ headerTitleAlign: 'center' }}
+      screenOptions={{
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: colors.bg },
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: colors.bg },
+        headerTintColor: colors.ink,
+        headerTitleAlign: 'left',
+        headerTitleStyle: {
+          color: colors.ink,
+          fontFamily: fonts.bodySemiBold,
+          fontSize: 16.5,
+        },
+      }}
     >
       <Stack.Screen
-        name="ImovelList"
         component={ImovelListScreen}
-        options={{ title: 'Imóveis' }}
+        name="ImovelList"
+        options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="ImovelDetail"
         component={ImovelDetailScreen}
-        options={{ title: 'Detalhe' }}
+        name="ImovelDetail"
+        options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="ImovelForm"
         component={ImovelFormScreen}
+        name="ImovelForm"
         options={({ route }) => ({
-          title: route.params?.id !== undefined ? 'Editar imóvel' : 'Novo imóvel',
+          headerBackTitle: 'Voltar',
+          title: route.params?.id !== undefined ? 'Editar anúncio' : 'Novo anúncio',
         })}
       />
     </Stack.Navigator>

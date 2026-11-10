@@ -125,7 +125,14 @@ function textoDaTela(): string[] {
 
 function acharPressavel(node: ReactTestRendererJSON | string, textoBuscado: string): ReactTestRendererJSON | undefined {
   if (typeof node === 'string') return undefined;
-  if (node.type === 'pressable' && coletarTextos(node).some((texto) => texto.includes(textoBuscado))) return node;
+  const rotulo = typeof node.props.accessibilityLabel === 'string' ? node.props.accessibilityLabel : '';
+  if (
+    node.type === 'pressable' &&
+    (rotulo.includes(textoBuscado) ||
+      coletarTextos(node).some((texto) => texto.includes(textoBuscado)))
+  ) {
+    return node;
+  }
   for (const filho of node.children ?? []) {
     const achado = acharPressavel(filho, textoBuscado);
     if (achado) return achado;

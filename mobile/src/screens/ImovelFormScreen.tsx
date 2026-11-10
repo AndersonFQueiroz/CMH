@@ -1,5 +1,6 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,16 +12,20 @@ import {
   View,
   type ScrollViewInstance,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BaseButton } from '../components/common/BaseButton';
 import { BaseInput } from '../components/common/BaseInput';
+import { Cobogo } from '../components/common/Cobogo';
 import { Loader } from '../components/common/Loader';
 import { OptionPicker } from '../components/common/OptionPicker';
+import { SectionTitle } from '../components/common/SectionTitle';
 import { FotoPicker } from '../components/imovel/FotoPicker';
 import { useImagePicker, type OrigemFoto } from '../hooks/useImagePicker';
 import type { RootStackParamList } from '../navigation/types';
 import { notificarImovelSalvo } from '../services/imovelEvents';
 import imovelService from '../services/imovelService';
+import { colors, fonts, radii } from '../theme';
 import type { FotoImovel, Imovel, TipoImovel } from '../types/imovel';
 import {
   camposAlterados,
@@ -51,6 +56,7 @@ const MENSAGEM_CORRIGIR = 'Corrija os campos destacados e tente novamente.';
 export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Element {
   const editingId = route.params?.id;
   const isEditing = editingId !== undefined;
+  const insets = useSafeAreaInsets();
 
   const [valores, setValores] = useState<ImovelFormValues>(VALORES_INICIAIS);
   const [erros, setErros] = useState<ImovelFormErrors>({});
@@ -71,10 +77,6 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
       montado.current = false;
     };
   }, []);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({ title: isEditing ? 'Editar anúncio' : 'Novo anúncio' });
-  }, [navigation, isEditing]);
 
   useEffect(() => {
     if (editingId === undefined) return undefined;
@@ -157,7 +159,7 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
   );
 
   const mostrarTopo = (): void => {
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    scrollRef.current?.scrollTo({ animated: true, y: 0 });
   };
 
   const salvar = async (): Promise<void> => {
@@ -220,8 +222,13 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
   if (isEditing && (erroCarregamento || !original)) {
     return (
       <View style={styles.stateContainer}>
+        <Cobogo columns={4} rows={2} />
+        <Text style={styles.stateTitle}>Anúncio indisponível</Text>
         <Text style={styles.stateError}>{erroCarregamento ?? 'Anúncio não encontrado.'}</Text>
-        <BaseButton onPress={() => setRetryKey((atual) => atual + 1)} title="Tentar novamente" />
+        <BaseButton
+          onPress={() => setRetryKey((atual) => atual + 1)}
+          title="Tentar novamente"
+        />
         <BaseButton onPress={() => navigation.goBack()} title="Voltar" variant="text" />
       </View>
     );
@@ -234,212 +241,275 @@ export function ImovelFormScreen({ navigation, route }: Props): React.JSX.Elemen
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      style={styles.flex}
+      style={styles.screen}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: 104 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         ref={scrollRef}
+        showsVerticalScrollIndicator={false}
       >
         {erroGeral ? (
           <View accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.banner}>
+            <Ionicons color={colors.danger} name="alert-circle" size={19} />
             <Text style={styles.bannerText}>{erroGeral}</Text>
           </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Anúncio</Text>
-        <FotoPicker
-          disabled={isSaving}
-          error={erros.foto}
-          foto={foto}
-          fotoAtualUrl={original?.foto_url}
-          onRemover={removerFoto}
-          onSelecionar={(origem) => void escolherFoto(origem)}
-          processando={processandoFoto}
-        />
-        <BaseInput
-          error={erros.titulo}
-          label="Título *"
-          maxLength={150}
-          onChangeText={(texto) => alterar('titulo', texto)}
-          placeholder="Ex.: Casa 3 quartos com quintal"
-          value={valores.titulo}
-        />
-        <BaseInput
-          error={erros.descricao}
-          label="Descrição"
-          multiline
-          numberOfLines={4}
-          onChangeText={(texto) => alterar('descricao', texto)}
-          placeholder="Detalhes do imóvel, condomínio, diferenciais..."
-          style={styles.textArea}
-          textAlignVertical="top"
-          value={valores.descricao}
-        />
-        <OptionPicker
-          error={erros.tipo}
-          label="Tipo *"
-          onChange={alterarTipo}
-          options={TIPO_OPCOES}
-          value={valores.tipo}
-        />
-        <OptionPicker
-          error={erros.finalidade}
-          label="Finalidade *"
-          onChange={(finalidade) => alterar('finalidade', finalidade)}
-          options={FINALIDADE_OPCOES}
-          value={valores.finalidade}
-        />
-
-        <Text style={styles.sectionTitle}>Valores e características</Text>
-        <BaseInput
-          error={erros.preco}
-          keyboardType="number-pad"
-          label={`${labelPreco} *`}
-          onChangeText={(texto) => alterar('preco', mascaraMoeda(texto))}
-          placeholder="R$ 0,00"
-          value={valores.preco}
-        />
-        <BaseInput
-          error={erros.area_m2}
-          keyboardType="decimal-pad"
-          label="Área (m²) *"
-          onChangeText={(texto) => alterar('area_m2', mascaraDecimal(texto))}
-          placeholder="Ex.: 120,5"
-          value={valores.area_m2}
-        />
-        <View style={styles.row}>
-          <BaseInput
-            containerStyle={styles.column}
-            editable={!isTerreno}
-            error={erros.quartos}
-            keyboardType="number-pad"
-            label="Quartos *"
-            onChangeText={(texto) => alterar('quartos', mascaraInteiro(texto))}
-            style={isTerreno ? styles.inputDisabled : undefined}
-            value={valores.quartos}
-          />
-          <BaseInput
-            containerStyle={styles.column}
-            editable={!isTerreno}
-            error={erros.banheiros}
-            keyboardType="number-pad"
-            label="Banheiros *"
-            onChangeText={(texto) => alterar('banheiros', mascaraInteiro(texto))}
-            style={isTerreno ? styles.inputDisabled : undefined}
-            value={valores.banheiros}
-          />
-          <BaseInput
-            containerStyle={styles.column}
-            error={erros.vagas}
-            keyboardType="number-pad"
-            label="Vagas"
-            onChangeText={(texto) => alterar('vagas', mascaraInteiro(texto))}
-            value={valores.vagas}
-          />
-        </View>
-        {isTerreno ? (
-          <Text style={styles.hint}>Terrenos não têm quartos nem banheiros.</Text>
-        ) : null}
-
-        <Text style={styles.sectionTitle}>Localização e contato</Text>
-        <BaseInput
-          error={erros.endereco}
-          label="Endereço *"
-          maxLength={200}
-          onChangeText={(texto) => alterar('endereco', texto)}
-          placeholder="Rua, número, bairro"
-          value={valores.endereco}
-        />
-        <BaseInput
-          error={erros.cidade}
-          label="Cidade *"
-          maxLength={100}
-          onChangeText={(texto) => alterar('cidade', texto)}
-          placeholder="Ex.: Santos/SP"
-          value={valores.cidade}
-        />
-        <BaseInput
-          error={erros.contato_telefone}
-          keyboardType="phone-pad"
-          label="Telefone de contato *"
-          onChangeText={(texto) => alterar('contato_telefone', mascaraTelefone(texto))}
-          placeholder="(13) 99999-1234"
-          value={valores.contato_telefone}
-        />
-
-        <Text style={styles.sectionTitle}>Disponibilidade</Text>
-        <BaseInput
-          error={erros.data_disponibilidade}
-          keyboardType="number-pad"
-          label="Disponível a partir de *"
-          onChangeText={(texto) => alterar('data_disponibilidade', mascaraData(texto))}
-          placeholder="DD/MM/AAAA"
-          value={valores.data_disponibilidade}
-        />
-        <View style={styles.switchRow}>
-          <View style={styles.flex}>
-            <Text style={styles.switchLabel}>Anúncio disponível</Text>
-            <Text style={styles.hint}>
-              {valores.disponivel ? 'Aparece como disponível.' : 'Marcado como indisponível.'}
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="Anúncio disponível"
-            onValueChange={(disponivel) => alterar('disponivel', disponivel)}
-            thumbColor="#fff"
-            trackColor={{ false: '#C7CDD1', true: '#174EA6' }}
-            value={valores.disponivel}
-          />
-        </View>
-
-        <View style={styles.actions}>
-          <BaseButton
-            disabled={processandoFoto}
-            isLoading={isSaving}
-            onPress={() => void salvar()}
-            title={isEditing ? 'Salvar alterações' : 'Cadastrar anúncio'}
-          />
-          <BaseButton
+        <View style={styles.section}>
+          <SectionTitle>Anúncio</SectionTitle>
+          <FotoPicker
             disabled={isSaving}
-            onPress={() => navigation.goBack()}
-            title="Cancelar"
-            variant="secondary"
+            error={erros.foto}
+            foto={foto}
+            fotoAtualUrl={original?.foto_url}
+            onRemover={removerFoto}
+            onSelecionar={(origem) => void escolherFoto(origem)}
+            processando={processandoFoto}
           />
+          <BaseInput
+            error={erros.titulo}
+            label="Título *"
+            maxLength={150}
+            onChangeText={(texto) => alterar('titulo', texto)}
+            placeholder="Ex.: Casa 3 quartos com quintal"
+            value={valores.titulo}
+          />
+          <BaseInput
+            error={erros.descricao}
+            label="Descrição"
+            multiline
+            numberOfLines={4}
+            onChangeText={(texto) => alterar('descricao', texto)}
+            placeholder="Detalhes do imóvel, condomínio, diferenciais..."
+            style={styles.textArea}
+            textAlignVertical="top"
+            value={valores.descricao}
+          />
+          <OptionPicker
+            error={erros.tipo}
+            label="Tipo *"
+            onChange={alterarTipo}
+            options={TIPO_OPCOES}
+            value={valores.tipo}
+          />
+          <OptionPicker
+            error={erros.finalidade}
+            label="Finalidade *"
+            onChange={(finalidade) => alterar('finalidade', finalidade)}
+            options={FINALIDADE_OPCOES}
+            value={valores.finalidade}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <SectionTitle>Valores e características</SectionTitle>
+          <BaseInput
+            error={erros.preco}
+            keyboardType="number-pad"
+            label={`${labelPreco} *`}
+            onChangeText={(texto) => alterar('preco', mascaraMoeda(texto))}
+            placeholder="R$ 0,00"
+            value={valores.preco}
+          />
+          <BaseInput
+            error={erros.area_m2}
+            keyboardType="decimal-pad"
+            label="Área (m²) *"
+            onChangeText={(texto) => alterar('area_m2', mascaraDecimal(texto))}
+            placeholder="Ex.: 120,5"
+            value={valores.area_m2}
+          />
+          <View style={styles.row}>
+            <BaseInput
+              containerStyle={styles.column}
+              editable={!isTerreno}
+              error={erros.quartos}
+              keyboardType="number-pad"
+              label="Quartos *"
+              onChangeText={(texto) => alterar('quartos', mascaraInteiro(texto))}
+              style={isTerreno ? styles.inputDisabled : undefined}
+              value={valores.quartos}
+            />
+            <BaseInput
+              containerStyle={styles.column}
+              editable={!isTerreno}
+              error={erros.banheiros}
+              keyboardType="number-pad"
+              label="Banheiros *"
+              onChangeText={(texto) => alterar('banheiros', mascaraInteiro(texto))}
+              style={isTerreno ? styles.inputDisabled : undefined}
+              value={valores.banheiros}
+            />
+            <BaseInput
+              containerStyle={styles.column}
+              error={erros.vagas}
+              keyboardType="number-pad"
+              label="Vagas"
+              onChangeText={(texto) => alterar('vagas', mascaraInteiro(texto))}
+              value={valores.vagas}
+            />
+          </View>
+          {isTerreno ? (
+            <View style={styles.hintRow}>
+              <Ionicons color={colors.muted} name="information-circle-outline" size={15} />
+              <Text style={styles.hint}>Terrenos não têm quartos nem banheiros.</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.section}>
+          <SectionTitle>Localização e contato</SectionTitle>
+          <BaseInput
+            error={erros.endereco}
+            label="Endereço *"
+            maxLength={200}
+            onChangeText={(texto) => alterar('endereco', texto)}
+            placeholder="Rua, número, bairro"
+            value={valores.endereco}
+          />
+          <BaseInput
+            error={erros.cidade}
+            label="Cidade *"
+            maxLength={100}
+            onChangeText={(texto) => alterar('cidade', texto)}
+            placeholder="Ex.: Santos/SP"
+            value={valores.cidade}
+          />
+          <BaseInput
+            error={erros.contato_telefone}
+            keyboardType="phone-pad"
+            label="Telefone de contato *"
+            onChangeText={(texto) => alterar('contato_telefone', mascaraTelefone(texto))}
+            placeholder="(13) 99999-1234"
+            value={valores.contato_telefone}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <SectionTitle>Disponibilidade</SectionTitle>
+          <BaseInput
+            error={erros.data_disponibilidade}
+            keyboardType="number-pad"
+            label="Disponível a partir de *"
+            onChangeText={(texto) => alterar('data_disponibilidade', mascaraData(texto))}
+            placeholder="DD/MM/AAAA"
+            value={valores.data_disponibilidade}
+          />
+          <View style={styles.switchRow}>
+            <View style={styles.switchText}>
+              <Text style={styles.switchLabel}>Anúncio disponível</Text>
+              <Text style={styles.hint}>
+                {valores.disponivel ? 'Aparece como disponível.' : 'Marcado como indisponível.'}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel="Anúncio disponível"
+              ios_backgroundColor={colors.lineStrong}
+              onValueChange={(disponivel) => alterar('disponivel', disponivel)}
+              thumbColor={colors.white}
+              trackColor={{ false: colors.lineStrong, true: colors.accent }}
+              value={valores.disponivel}
+            />
+          </View>
         </View>
       </ScrollView>
+
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <BaseButton
+          disabled={processandoFoto}
+          icon="checkmark"
+          isLoading={isSaving}
+          onPress={() => void salvar()}
+          style={styles.saveButton}
+          title={isEditing ? 'Salvar alterações' : 'Cadastrar anúncio'}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  actions: { gap: 10, marginTop: 8 },
   banner: {
-    backgroundColor: '#FCE8E6',
-    borderColor: '#F2B8B5',
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 12,
+    alignItems: 'flex-start',
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radii.md,
+    flexDirection: 'row',
+    gap: 9,
+    padding: 13,
   },
-  bannerText: { color: '#8C1D18', fontSize: 14, lineHeight: 20 },
+  bannerText: {
+    color: colors.danger,
+    flex: 1,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13.5,
+    lineHeight: 20,
+  },
+  bottomBar: {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.line,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    position: 'absolute',
+    right: 0,
+  },
   column: { flex: 1 },
-  container: { gap: 14, padding: 16, paddingBottom: 40 },
-  flex: { flex: 1 },
-  hint: { color: '#5F676D', fontSize: 13 },
-  inputDisabled: { backgroundColor: '#F1F3F4', color: '#687078' },
+  container: { gap: 26, padding: 20 },
+  hint: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+  },
+  hintRow: { alignItems: 'center', flexDirection: 'row', gap: 6 },
+  inputDisabled: { backgroundColor: colors.bgDeep, color: colors.muted },
   row: { flexDirection: 'row', gap: 10 },
-  sectionTitle: { color: '#202124', fontSize: 17, fontWeight: '700', marginTop: 6 },
+  saveButton: { width: '100%' },
+  screen: { backgroundColor: colors.bg, flex: 1 },
+  section: { gap: 12 },
   stateContainer: {
     alignItems: 'center',
+    backgroundColor: colors.bg,
     flex: 1,
-    gap: 12,
+    gap: 11,
     justifyContent: 'center',
-    padding: 24,
+    padding: 28,
   },
-  stateError: { color: '#B3261E', fontSize: 15, textAlign: 'center' },
-  switchLabel: { color: '#30363B', fontSize: 14, fontWeight: '600' },
-  switchRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  textArea: { minHeight: 96, paddingTop: 12 },
+  stateError: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 14.5,
+    lineHeight: 21,
+    maxWidth: 300,
+    textAlign: 'center',
+  },
+  stateTitle: {
+    color: colors.ink,
+    fontFamily: fonts.display,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    marginTop: 6,
+  },
+  switchLabel: {
+    color: colors.ink,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 14,
+  },
+  switchRow: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+  },
+  switchText: { flex: 1, gap: 3 },
+  textArea: { minHeight: 108, paddingTop: 12 },
 });
 
 export default ImovelFormScreen;

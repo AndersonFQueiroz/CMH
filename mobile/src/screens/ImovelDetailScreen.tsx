@@ -1,14 +1,31 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '../components/common/Badge';
 import { BaseButton } from '../components/common/BaseButton';
+import { Cobogo } from '../components/common/Cobogo';
 import { Loader } from '../components/common/Loader';
+import { SectionTitle } from '../components/common/SectionTitle';
 import { ImovelAvatar } from '../components/imovel/ImovelAvatar';
 import type { RootStackParamList } from '../navigation/types';
 import { notificarImovelExcluido, onImovelSalvo } from '../services/imovelEvents';
 import imovelService from '../services/imovelService';
+import { colors, fonts, radii, shadows } from '../theme';
 import type { Imovel } from '../types/imovel';
 import { formatArea, formatDataBR, formatPreco, formatTelefone } from '../utils/format';
 
@@ -26,6 +43,16 @@ const FINALIDADE_LABELS: Record<Imovel['finalidade'], string> = {
   venda: 'Venda',
 };
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Não foi possível carregar este imóvel.';
+}
+
+function erroDeExclusao(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : 'Não foi possível excluir o anúncio. Tente novamente.';
+}
+
 interface DetailRowProps {
   label: string;
   value: string;
@@ -40,18 +67,46 @@ function DetailRow({ label, value }: DetailRowProps): React.JSX.Element {
   );
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Não foi possível carregar este imóvel.';
+interface SpecCellProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
 }
 
-function erroDeExclusao(error: unknown): string {
-  return error instanceof Error
-    ? error.message
-    : 'Não foi possível excluir o anúncio. Tente novamente.';
+function SpecCell({ icon, label, value }: SpecCellProps): React.JSX.Element {
+  return (
+    <View accessibilityLabel={`${label}: ${value}`} style={styles.specCell}>
+      <View style={styles.specValueRow}>
+        <Ionicons color={colors.accent} name={icon} size={18} />
+        <Text style={styles.specValue}>{value}</Text>
+      </View>
+      <Text style={styles.specLabel}>{label}</Text>
+    </View>
+  );
+}
+
+interface StatusPillProps {
+  disponivel: boolean;
+}
+
+function StatusPill({ disponivel }: StatusPillProps): React.JSX.Element {
+  return (
+    <View style={[styles.statusPill, !disponivel && styles.statusPillOff]}>
+      <View
+        style={[
+          styles.statusDot,
+          { backgroundColor: disponivel ? colors.available : colors.unavailable },
+        ]}
+      />
+      <Text style={styles.statusText}>{disponivel ? 'Disponível' : 'Indisponível'}</Text>
+    </View>
+  );
 }
 
 export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Element {
   const { id } = route.params;
+  const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,10 +120,6 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
       montado.current = false;
     };
   }, []);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({ title: imovel?.titulo ?? 'Detalhes do imóvel' });
-  }, [imovel?.titulo, navigation]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -125,13 +176,29 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
     if (!imovel) return;
     Alert.alert(
       'Excluir anúncio?',
-      `Excluir \"${imovel.titulo}\"? Essa ação é definitiva e o anúncio não poderá ser recuperado.`,
+      `Excluir "${imovel.titulo}"? Essa ação é definitiva e o anúncio não poderá ser recuperado.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Excluir', style: 'destructive', onPress: () => void excluirAnuncio() },
       ],
     );
   }, [excluirAnuncio, imovel]);
+
+  const abrirMapa = useCallback((): void => {
+    if (!imovel) return;
+    const consulta = encodeURIComponent(`${imovel.endereco}, ${imovel.cidade}`);
+    void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${consulta}`).catch(
+      () => Alert.alert('Mapa indisponível', 'Não foi possível abrir o aplicativo de mapas.'),
+    );
+  }, [imovel]);
+
+  const ligar = useCallback((): void => {
+    if (!imovel) return;
+    const telefone = imovel.contato_telefone.replace(/\D/g, '');
+    void Linking.openURL(`tel:${telefone}`).catch(() =>
+      Alert.alert('Ligação indisponível', 'Não foi possível abrir o discador.'),
+    );
+  }, [imovel]);
 
   if (isLoading && !imovel) {
     return (
@@ -143,116 +210,335 @@ export function ImovelDetailScreen({ navigation, route }: Props): React.JSX.Elem
 
   if (erro || !imovel) {
     return (
-      <View style={styles.stateContainer}>
-        <Text style={styles.error}>{erro ?? 'Imóvel não encontrado.'}</Text>
+      <View style={[styles.stateContainer, { paddingTop: insets.top }]}>
+        <Cobogo columns={4} rows={2} />
+        <Text style={styles.stateTitle}>Anúncio indisponível</Text>
+        <Text style={styles.stateText}>{erro ?? 'Imóvel não encontrado.'}</Text>
         <BaseButton onPress={tentarNovamente} title="Tentar novamente" />
         <BaseButton onPress={() => navigation.goBack()} title="Voltar" variant="text" />
       </View>
     );
   }
 
-  const disponibilidade = imovel.disponivel ? 'Disponível' : 'Indisponível';
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ImovelAvatar fotoUrl={imovel.foto_url} style={styles.photo} />
-      <Text style={styles.title}>{imovel.titulo}</Text>
-      <Text style={styles.price}>{formatPreco(imovel.preco, imovel.finalidade)}</Text>
-      <Text style={styles.city}>{imovel.cidade}</Text>
+    <View style={styles.screen}>
+      {isFocused ? <StatusBar style="light" /> : null}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 104 + insets.bottom }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.hero}>
+          <ImovelAvatar fotoUrl={imovel.foto_url} iconSize={46} style={styles.heroImage} />
+          <LinearGradient
+            colors={['rgba(9, 20, 18, 0.42)', 'rgba(9, 20, 18, 0)']}
+            pointerEvents="none"
+            style={[styles.topScrim, { height: insets.top + 78 }]}
+          />
+        </View>
 
-      <View style={styles.badges}>
-        <Badge label={TIPO_LABELS[imovel.tipo]} variant="type" />
-        <Badge label={FINALIDADE_LABELS[imovel.finalidade]} variant="purpose" />
-        <Badge
-          label={disponibilidade}
-          variant={imovel.disponivel ? 'available' : 'unavailable'}
-        />
-      </View>
+        <View style={styles.sheet}>
+          <View style={styles.badges}>
+            <Badge label={TIPO_LABELS[imovel.tipo]} variant="type" />
+            <Badge label={FINALIDADE_LABELS[imovel.finalidade]} variant="purpose" />
+            <StatusPill disponivel={imovel.disponivel} />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Sobre o imóvel</Text>
-        <Text style={styles.description}>{imovel.descricao || 'Sem descrição informada.'}</Text>
-      </View>
+          <View style={styles.heading}>
+            <Text style={styles.title}>{imovel.titulo}</Text>
+            <Pressable
+              accessibilityLabel={`Ver ${imovel.endereco}, ${imovel.cidade} no mapa`}
+              accessibilityRole="button"
+              onPress={abrirMapa}
+              style={({ pressed }) => [styles.cityRow, pressed && styles.pressed]}
+            >
+              <Ionicons color={colors.muted} name="location-outline" size={16} />
+              <Text style={styles.city}>
+                {imovel.endereco}, {imovel.cidade}
+              </Text>
+              <Ionicons color={colors.accent} name="arrow-forward" size={14} />
+            </Pressable>
+            <Text style={styles.price}>{formatPreco(imovel.preco, imovel.finalidade)}</Text>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Características</Text>
-        <DetailRow label="Área" value={formatArea(imovel.area_m2)} />
-        <DetailRow label="Quartos" value={String(imovel.quartos)} />
-        <DetailRow label="Banheiros" value={String(imovel.banheiros)} />
-        <DetailRow label="Vagas" value={String(imovel.vagas)} />
-        <DetailRow label="Disponível a partir de" value={formatDataBR(imovel.data_disponibilidade)} />
-      </View>
+          <View style={styles.section}>
+            <SectionTitle>Sobre o imóvel</SectionTitle>
+            <Text style={styles.description}>
+              {imovel.descricao || 'Sem descrição informada.'}
+            </Text>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Localização e contato</Text>
-        <DetailRow label="Endereço" value={imovel.endereco} />
-        <DetailRow label="Cidade" value={imovel.cidade} />
-        <DetailRow label="Telefone" value={formatTelefone(imovel.contato_telefone)} />
-      </View>
+          <View style={styles.section}>
+            <SectionTitle>Características</SectionTitle>
+            <View style={styles.specPanel}>
+              <View style={styles.specRow}>
+                <SpecCell icon="resize-outline" label="Área" value={formatArea(imovel.area_m2)} />
+                <View style={styles.specDivider} />
+                <SpecCell icon="bed-outline" label="Quartos" value={String(imovel.quartos)} />
+              </View>
+              <View style={styles.specHairline} />
+              <View style={styles.specRow}>
+                <SpecCell
+                  icon="water-outline"
+                  label="Banheiros"
+                  value={String(imovel.banheiros)}
+                />
+                <View style={styles.specDivider} />
+                <SpecCell icon="car-outline" label="Vagas" value={String(imovel.vagas)} />
+              </View>
+            </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Datas do anúncio</Text>
-        <DetailRow label="Publicado em" value={formatDataBR(imovel.created_at)} />
-        <DetailRow label="Atualizado em" value={formatDataBR(imovel.updated_at)} />
-      </View>
+          <View style={styles.section}>
+            <SectionTitle>Localização e contato</SectionTitle>
+            <DetailRow label="Endereço" value={imovel.endereco} />
+            <DetailRow label="Cidade" value={imovel.cidade} />
+            <DetailRow
+              label="Disponível a partir de"
+              value={formatDataBR(imovel.data_disponibilidade)}
+            />
+            <DetailRow label="Telefone" value={formatTelefone(imovel.contato_telefone)} />
+            <View style={styles.contactActions}>
+              <BaseButton
+                icon="call-outline"
+                onPress={ligar}
+                style={styles.contactButton}
+                title="Ligar"
+                variant="secondary"
+              />
+              <BaseButton
+                icon="map-outline"
+                onPress={abrirMapa}
+                style={styles.contactButton}
+                title="Ver no mapa"
+                variant="secondary"
+              />
+            </View>
+          </View>
 
-      <View style={styles.actions}>
+          <Text style={styles.dates}>
+            Publicado em {formatDataBR(imovel.created_at)} · Atualizado em{' '}
+            {formatDataBR(imovel.updated_at)}
+          </Text>
+        </View>
+      </ScrollView>
+
+      <Pressable
+        accessibilityLabel="Voltar para a lista"
+        accessibilityRole="button"
+        onPress={() => navigation.goBack()}
+        style={({ pressed }) => [
+          styles.backButton,
+          { top: insets.top + 12 },
+          pressed && styles.pressed,
+        ]}
+      >
+        <Ionicons color={colors.ink} name="arrow-back" size={21} />
+      </Pressable>
+
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <BaseButton
           disabled={excluindo}
+          icon="create-outline"
           onPress={() => navigation.navigate('ImovelForm', { id })}
+          style={styles.editButton}
           title="Editar anúncio"
         />
-        <BaseButton
-          isLoading={excluindo}
-          onPress={confirmarExclusao}
-          title="Excluir anúncio"
-          variant="destructive"
-        />
-        <BaseButton
+        <Pressable
+          accessibilityLabel="Excluir anúncio"
+          accessibilityRole="button"
+          accessibilityState={{ busy: excluindo, disabled: excluindo }}
           disabled={excluindo}
-          onPress={() => navigation.goBack()}
-          title="Voltar"
-          variant="secondary"
-        />
+          onPress={confirmarExclusao}
+          style={({ pressed }) => [
+            styles.deleteButton,
+            pressed && styles.pressed,
+            excluindo && styles.deleteButtonDisabled,
+          ]}
+        >
+          {excluindo ? (
+            <ActivityIndicator color={colors.danger} />
+          ) : (
+            <Ionicons color={colors.danger} name="trash-outline" size={21} />
+          )}
+        </Pressable>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  actions: { gap: 10, marginTop: 4 },
+  backButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderRadius: 22,
+    height: 44,
+    justifyContent: 'center',
+    left: 16,
+    position: 'absolute',
+    width: 44,
+    ...shadows.floating,
+  },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  city: { color: '#5F676D', fontSize: 15 },
-  container: { gap: 14, padding: 16, paddingBottom: 32 },
-  description: { color: '#41484D', fontSize: 15, lineHeight: 22 },
-  detailLabel: { color: '#5F676D', flex: 1, fontSize: 14 },
+  bottomBar: {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.line,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 10,
+    left: 0,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    position: 'absolute',
+    right: 0,
+  },
+  city: {
+    color: colors.muted,
+    flexShrink: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+  },
+  cityRow: { alignItems: 'center', flexDirection: 'row', gap: 4, minHeight: 32 },
+  contactActions: { flexDirection: 'row', gap: 10, paddingTop: 8 },
+  contactButton: { flex: 1 },
+  dates: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 11.5,
+    lineHeight: 17,
+    paddingTop: 4,
+  },
+  deleteButton: {
+    alignItems: 'center',
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.dangerSoft,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
+  deleteButtonDisabled: { opacity: 0.6 },
+  description: {
+    color: colors.inkSoft,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 23.5,
+  },
+  detailLabel: {
+    color: colors.muted,
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 13.5,
+  },
   detailRow: {
-    borderBottomColor: '#E7EAED',
+    borderBottomColor: colors.line,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 12,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
   detailValue: {
-    color: '#202124',
-    flex: 1.4,
+    color: colors.inkSoft,
+    flex: 1.5,
+    fontFamily: fonts.bodyMedium,
     fontSize: 14,
-    fontWeight: '500',
     textAlign: 'right',
   },
-  error: { color: '#B3261E', fontSize: 15, textAlign: 'center' },
-  photo: { height: 230, width: '100%' },
-  price: { color: '#174EA6', fontSize: 23, fontWeight: '700' },
-  section: { gap: 8, paddingTop: 6 },
-  sectionTitle: { color: '#202124', fontSize: 17, fontWeight: '700' },
+  editButton: { flex: 1 },
+  heading: { gap: 4 },
+  hero: { backgroundColor: colors.bgDeep },
+  heroImage: { aspectRatio: 4 / 3, borderRadius: 0, width: '100%' },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.985 }] },
+  price: {
+    color: colors.ink,
+    fontFamily: fonts.display,
+    fontSize: 31,
+    letterSpacing: -1,
+    lineHeight: 36,
+    marginTop: 6,
+  },
+  screen: { backgroundColor: colors.bg, flex: 1 },
+  section: { gap: 10 },
+  sheet: {
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: radii.xxl,
+    borderTopRightRadius: radii.xxl,
+    gap: 22,
+    marginTop: -28,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  specCell: { flex: 1, gap: 3, paddingHorizontal: 16, paddingVertical: 14 },
+  specDivider: { backgroundColor: colors.line, width: StyleSheet.hairlineWidth },
+  specHairline: { backgroundColor: colors.line, height: StyleSheet.hairlineWidth },
+  specLabel: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 12.5,
+  },
+  specPanel: {
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  specRow: { flexDirection: 'row' },
+  specValue: {
+    color: colors.ink,
+    fontFamily: fonts.display,
+    fontSize: 20,
+    letterSpacing: -0.4,
+  },
+  specValueRow: { alignItems: 'center', flexDirection: 'row', gap: 7 },
   stateContainer: {
     alignItems: 'center',
+    backgroundColor: colors.bg,
     flex: 1,
-    gap: 12,
+    gap: 11,
     justifyContent: 'center',
-    padding: 24,
+    padding: 28,
   },
-  title: { color: '#202124', fontSize: 23, fontWeight: '700' },
+  stateText: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 14.5,
+    lineHeight: 21,
+    maxWidth: 300,
+    textAlign: 'center',
+  },
+  stateTitle: {
+    color: colors.ink,
+    fontFamily: fonts.display,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    marginTop: 6,
+  },
+  statusDot: { borderRadius: 4, height: 7, width: 7 },
+  statusPill: {
+    alignItems: 'center',
+    backgroundColor: colors.availableSoft,
+    borderRadius: radii.sm,
+    flexDirection: 'row',
+    gap: 6,
+    minHeight: 28,
+    paddingHorizontal: 10,
+  },
+  statusPillOff: { backgroundColor: colors.unavailableSoft },
+  statusText: {
+    color: colors.inkSoft,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 12,
+  },
+  title: {
+    color: colors.ink,
+    fontFamily: fonts.display,
+    fontSize: 26,
+    letterSpacing: -0.7,
+    lineHeight: 31,
+  },
+  topScrim: { left: 0, position: 'absolute', right: 0, top: 0 },
 });
 
 export default ImovelDetailScreen;

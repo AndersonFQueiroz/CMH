@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { colors, fonts, radii } from '../../theme';
+
 export interface PickerOption<T extends string> {
   label: string;
   value: T;
@@ -35,14 +37,14 @@ export function OptionPicker<T extends string>({
               aria-disabled={disabled}
               aria-label={option.label}
               disabled={disabled}
-              role="radio"
               key={option.value}
               onPress={() => onChange(option.value)}
+              role="radio"
               style={({ pressed }) => [
                 styles.chip,
                 selected && styles.chipSelected,
                 error && !selected && styles.chipError,
-                pressed && styles.pressed,
+                pressed && !disabled && styles.pressed,
                 disabled && styles.disabled,
               ]}
             >
@@ -60,24 +62,32 @@ export function OptionPicker<T extends string>({
 
 const styles = StyleSheet.create({
   chip: {
-    backgroundColor: '#fff',
-    borderColor: '#C7CDD1',
-    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderColor: colors.lineStrong,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    minHeight: 40,
     justifyContent: 'center',
-    paddingHorizontal: 14,
+    minHeight: 44,
+    paddingHorizontal: 16,
   },
-  chipError: { borderColor: '#B3261E' },
-  chipLabel: { color: '#30363B', fontSize: 14, fontWeight: '500' },
-  chipLabelSelected: { color: '#fff', fontWeight: '600' },
-  chipSelected: { backgroundColor: '#174EA6', borderColor: '#174EA6' },
-  container: { gap: 6 },
-  disabled: { opacity: 0.55 },
-  error: { color: '#B3261E', fontSize: 13 },
-  label: { color: '#30363B', fontSize: 14, fontWeight: '600' },
+  chipError: { borderColor: colors.danger },
+  chipLabel: {
+    color: colors.inkSoft,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+  },
+  chipLabelSelected: { color: colors.white, fontFamily: fonts.bodySemiBold },
+  chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
+  container: { gap: 7 },
+  disabled: { opacity: 0.45 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 12.5 },
+  label: {
+    color: colors.inkSoft,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pressed: { opacity: 0.82 },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.985 }] },
 });
 
 export default OptionPicker;

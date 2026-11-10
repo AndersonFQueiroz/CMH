@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,6 +7,8 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+
+import { colors, fonts, radii } from '../../theme';
 
 interface BaseInputProps extends TextInputProps {
   label: string;
@@ -18,15 +21,32 @@ export function BaseInput({
   error,
   containerStyle,
   style,
+  onBlur,
+  onFocus,
   ...textInputProps
 }: BaseInputProps): React.JSX.Element {
+  const [focused, setFocused] = useState(false);
+
   return (
     <View style={[styles.container, containerStyle]}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor="#687078"
-        style={[styles.input, error && styles.inputError, style]}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        placeholderTextColor={colors.muted}
+        style={[
+          styles.input,
+          focused && styles.inputFocused,
+          error && styles.inputError,
+          style,
+        ]}
         {...textInputProps}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -35,18 +55,25 @@ export function BaseInput({
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 6 },
-  error: { color: '#B3261E', fontSize: 13 },
+  container: { gap: 7 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 12.5 },
   input: {
-    backgroundColor: '#fff',
-    borderColor: '#C7CDD1',
-    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderColor: colors.lineStrong,
+    borderRadius: radii.md,
     borderWidth: 1,
-    color: '#202124',
+    color: colors.ink,
+    fontFamily: fonts.body,
     fontSize: 16,
-    minHeight: 48,
-    paddingHorizontal: 12,
+    minHeight: 52,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  inputError: { borderColor: '#B3261E' },
-  label: { color: '#30363B', fontSize: 14, fontWeight: '600' },
+  inputError: { borderColor: colors.danger },
+  inputFocused: { borderColor: colors.accent },
+  label: {
+    color: colors.inkSoft,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
 });
